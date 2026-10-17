@@ -369,18 +369,6 @@ const WCHAR g_RegColorNames[][32] = {
     L"MenuBar"                /* 30 = COLOR_MENUBAR */
 };
 
-static COLORREF
-StrToColorref(
-    IN LPWSTR lpszCol)
-{
-    BYTE rgb[3];
-
-    rgb[0] = (BYTE)wcstoul(lpszCol, &lpszCol, 10);
-    rgb[1] = (BYTE)wcstoul(lpszCol, &lpszCol, 10);
-    rgb[2] = (BYTE)wcstoul(lpszCol, &lpszCol, 10);
-    return RGB(rgb[0], rgb[1], rgb[2]);
-}
-
 static VOID
 SetUserSysColors(VOID)
 {
