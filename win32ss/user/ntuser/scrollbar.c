@@ -1008,9 +1008,34 @@ IntDrawScrollInterior(PWND pWnd, HDC hDC, INT nBar, BOOL Vertical, PSCROLLBARINF
       }
    }
 
-   // Draw thumb
+   // Draw macOS rounded pill scrollbar thumb
    if (ThumbSize)
-      DrawEdge(hDC, &Rect, EDGE_RAISED, BF_RECT | BF_MIDDLE);
+   {
+      RECT ThumbRect = Rect;
+      HBRUSH hThumbBr, hPrevBr;
+      HPEN hThumbPen, hPrevPen;
+
+      FillRect(hDC, &Rect, IntGetSysColorBrush(COLOR_SCROLLBAR));
+      if (Vertical)
+      {
+         ThumbRect.left  += 2;
+         ThumbRect.right -= 2;
+      }
+      else
+      {
+         ThumbRect.top    += 2;
+         ThumbRect.bottom -= 2;
+      }
+      hThumbBr  = IntGdiCreateSolidBrush(RGB(156, 160, 172));
+      hThumbPen = NtGdiCreatePen(PS_SOLID, 1, RGB(142, 146, 158), NULL);
+      hPrevBr   = NtGdiSelectBrush(hDC, hThumbBr);
+      hPrevPen  = NtGdiSelectPen(hDC, hThumbPen);
+      NtGdiRoundRect(hDC, ThumbRect.left, ThumbRect.top, ThumbRect.right, ThumbRect.bottom, 8, 8);
+      NtGdiSelectBrush(hDC, hPrevBr);
+      NtGdiSelectPen(hDC, hPrevPen);
+      GreDeleteObject(hThumbBr);
+      GreDeleteObject(hThumbPen);
+   }
 
    // Cleanup
    NtGdiSelectBrush(hDC, hSaveBrush);

@@ -82,6 +82,20 @@ RtlVerifyVersionInfo(IN PRTL_OSVERSIONINFOEXW VersionInfo,
         return STATUS_INVALID_PARAMETER;
     }
 
+    /* kilsesiOS: When applications call IsWindowsVistaOrGreater() .. IsWindows10OrGreater()
+       (using VER_GREATER_EQUAL or VER_GREATER), evaluate against Windows 10 (10.0 Build 19045) */
+    if ((TypeMask & VER_MAJORVERSION) &&
+        (RtlpVerGetCondition(ConditionMask, VER_MAJORVERSION) == VER_GREATER_EQUAL ||
+         RtlpVerGetCondition(ConditionMask, VER_MAJORVERSION) == VER_GREATER) &&
+        Version.dwMajorVersion < 10)
+    {
+        Version.dwMajorVersion    = 10;
+        Version.dwMinorVersion    = 0;
+        Version.dwBuildNumber     = 19045;
+        Version.wServicePackMajor = 0;
+        Version.wServicePackMinor = 0;
+    }
+
     if (TypeMask & VER_PRODUCT_TYPE)
     {
         Comparison = RtlpVerCompare(Version.wProductType,

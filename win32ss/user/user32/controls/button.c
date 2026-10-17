@@ -976,32 +976,39 @@ static void PB_Paint( HWND hwnd, HDC hDC, UINT action )
     hOldBrush = SelectObject(hDC,GetSysColorBrush(COLOR_BTNFACE));
     oldBkMode = SetBkMode(hDC, TRANSPARENT);
 
-    if (get_button_type(style) == BS_DEFPUSHBUTTON)
-    {
-        if (action != ODA_FOCUS)
-            Rectangle(hDC, rc.left, rc.top, rc.right, rc.bottom);
-	InflateRect( &rc, -1, -1 );
-    }
-
     /* completely skip the drawing if only focus has changed */
     if (action == ODA_FOCUS) goto draw_focus;
 
-    uState = DFCS_BUTTONPUSH;
-
-    if (style & BS_FLAT)
-        uState |= DFCS_MONO;
-    else if (pushedState)
+    if (get_button_type(style) == BS_DEFPUSHBUTTON && IsWindowEnabled(hwnd))
     {
-	if (get_button_type(style) == BS_DEFPUSHBUTTON )
-	    uState |= DFCS_FLAT;
-	else
-	    uState |= DFCS_PUSHED;
+        /* macOS Sonoma System Blue default push button */
+        HBRUSH hBlueBr = CreateSolidBrush(pushedState ? RGB(0, 98, 208) : RGB(0, 122, 255));
+        HPEN hBluePen  = CreatePen(PS_SOLID, 1, RGB(0, 100, 220));
+        HGDIOBJ hPrevBr  = SelectObject(hDC, hBlueBr);
+        HGDIOBJ hPrevPen = SelectObject(hDC, hBluePen);
+
+        FillRect(hDC, &rc, GetSysColorBrush(COLOR_BTNFACE));
+        RoundRect(hDC, rc.left, rc.top, rc.right, rc.bottom, 8, 8);
+
+        SelectObject(hDC, hPrevBr);
+        SelectObject(hDC, hPrevPen);
+        DeleteObject(hBlueBr);
+        DeleteObject(hBluePen);
     }
+    else
+    {
+        uState = DFCS_BUTTONPUSH;
 
-    if (state & (BST_CHECKED | BST_INDETERMINATE))
-        uState |= DFCS_CHECKED;
+        if (style & BS_FLAT)
+            uState |= DFCS_MONO;
+        else if (pushedState)
+            uState |= DFCS_PUSHED;
 
-    DrawFrameControl( hDC, &rc, DFC_BUTTON, uState );
+        if (state & (BST_CHECKED | BST_INDETERMINATE))
+            uState |= DFCS_CHECKED;
+
+        DrawFrameControl( hDC, &rc, DFC_BUTTON, uState );
+    }
 
     /* draw button label */
     r = rc;
@@ -1013,7 +1020,10 @@ static void PB_Paint( HWND hwnd, HDC hDC, UINT action )
     if (pushedState)
        OffsetRect(&r, 1, 1);
 
-    oldTxtColor = SetTextColor( hDC, GetSysColor(COLOR_BTNTEXT) );
+    if (get_button_type(style) == BS_DEFPUSHBUTTON && IsWindowEnabled(hwnd))
+        oldTxtColor = SetTextColor( hDC, RGB(255, 255, 255) );
+    else
+        oldTxtColor = SetTextColor( hDC, GetSysColor(COLOR_BTNTEXT) );
 
     BUTTON_DrawLabel(hwnd, hDC, dtFlags, &r);
 

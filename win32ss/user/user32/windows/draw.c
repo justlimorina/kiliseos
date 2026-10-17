@@ -617,35 +617,42 @@ static void UITOOLS_DrawCheckedRect( HDC dc, LPRECT rect )
  */
 static BOOL UITOOLS95_DFC_ButtonPush(HDC dc, LPRECT r, UINT uFlags)
 {
-    UINT edge;
     RECT myr = *r;
+    HBRUSH hFillBr;
+    HGDIOBJ hOldBr, hOldPen;
+    HPEN hBorderPen;
+    COLORREF clrFill, clrBorder;
 
-    if(uFlags & (DFCS_PUSHED | DFCS_CHECKED | DFCS_FLAT))
-        edge = EDGE_SUNKEN;
-    else
-        edge = EDGE_RAISED;
+    (void)UITOOLS_DrawCheckedRect;
+    FillRect(dc, &myr, GetSysColorBrush(COLOR_BTNFACE));
 
-    if(uFlags & DFCS_CHECKED)
+    if (uFlags & (DFCS_PUSHED | DFCS_CHECKED))
     {
-        if(uFlags & DFCS_MONO)
-            IntDrawRectEdge(dc, &myr, edge, BF_MONO|BF_RECT|BF_ADJUST, 1);
-        else
-            IntDrawRectEdge(dc, &myr, edge, (uFlags&DFCS_FLAT)|BF_RECT|BF_SOFT|BF_ADJUST, 1);
-
-        UITOOLS_DrawCheckedRect( dc, &myr );
+        clrFill   = RGB(220, 224, 236);
+        clrBorder = RGB(165, 172, 190);
+    }
+    else if (uFlags & DFCS_INACTIVE)
+    {
+        clrFill   = RGB(242, 242, 246);
+        clrBorder = RGB(210, 212, 220);
     }
     else
     {
-        if(uFlags & DFCS_MONO)
-        {
-            IntDrawRectEdge(dc, &myr, edge, BF_MONO|BF_RECT|BF_ADJUST, 1);
-            FillRect(dc, &myr, GetSysColorBrush(COLOR_BTNFACE));
-        }
-        else
-        {
-            IntDrawRectEdge(dc, r, edge, (uFlags&DFCS_FLAT) | BF_MIDDLE | BF_RECT | BF_SOFT, 1);
-        }
+        clrFill   = RGB(255, 255, 255);
+        clrBorder = RGB(192, 197, 210);
     }
+
+    hFillBr    = CreateSolidBrush(clrFill);
+    hBorderPen = CreatePen(PS_SOLID, 1, clrBorder);
+    hOldBr     = SelectObject(dc, hFillBr);
+    hOldPen    = SelectObject(dc, hBorderPen);
+
+    RoundRect(dc, myr.left, myr.top, myr.right, myr.bottom, 8, 8);
+
+    SelectObject(dc, hOldBr);
+    SelectObject(dc, hOldPen);
+    DeleteObject(hFillBr);
+    DeleteObject(hBorderPen);
 
     /* Adjust rectangle if asked */
     if(uFlags & DFCS_ADJUSTRECT)
@@ -700,8 +707,6 @@ static BOOL UITOOLS95_DFC_ButtonCheckRadio(HDC dc, LPRECT r, UINT uFlags, BOOL R
 
     if (Radio && ((uFlags & 0xFF) == DFCS_BUTTONRADIOMASK))
     {
-#if 1
-        // FIXME: improve font rendering
         RECT Rect;
         HGDIOBJ hbrOld, hpenOld;
         SetRect(&Rect, X, Y, X + Shorter, Y + Shorter);
@@ -711,33 +716,16 @@ static BOOL UITOOLS95_DFC_ButtonCheckRadio(HDC dc, LPRECT r, UINT uFlags, BOOL R
         Ellipse(dc, Rect.left, Rect.top, Rect.right, Rect.bottom);
         SelectObject(dc, hbrOld);
         SelectObject(dc, hpenOld);
-#else
-        SetBkMode(dc, OPAQUE);
-        SetBkColor(dc, RGB(255, 255, 255));
-        SetTextColor(dc, RGB(0, 0, 0));
-        TextOut(dc, X, Y, &Center, 1);
-        SetBkMode(dc, TRANSPARENT);
-        TextOut(dc, X, Y, &OutRight, 1);
-        TextOut(dc, X, Y, &OutLeft, 1);
-        TextOut(dc, X, Y, &InRight, 1);
-        TextOut(dc, X, Y, &InLeft, 1);
-#endif
     }
     else
     {
         SetBkMode(dc, TRANSPARENT);
 
-        /* Center section, white for active, grey for inactive */
-        if ((uFlags & (DFCS_INACTIVE | DFCS_PUSHED)))
-            i = COLOR_BTNFACE;
-        else
-            i = COLOR_WINDOW;
-        SetTextColor(dc, GetSysColor(i));
-        TextOut(dc, X, Y, &Center, 1);
-
-        if (uFlags & (DFCS_FLAT | DFCS_MONO))
+        if ((uFlags & DFCS_CHECKED) && !(uFlags & DFCS_INACTIVE))
         {
-            SetTextColor(dc, GetSysColor(COLOR_WINDOWFRAME));
+            SetTextColor(dc, RGB(0, 122, 255));
+            TextOut(dc, X, Y, &Center, 1);
+            SetTextColor(dc, RGB(0, 100, 220));
             TextOut(dc, X, Y, &OutRight, 1);
             TextOut(dc, X, Y, &OutLeft, 1);
             TextOut(dc, X, Y, &InRight, 1);
@@ -745,13 +733,17 @@ static BOOL UITOOLS95_DFC_ButtonCheckRadio(HDC dc, LPRECT r, UINT uFlags, BOOL R
         }
         else
         {
-            SetTextColor(dc, GetSysColor(COLOR_BTNSHADOW));
+            if ((uFlags & (DFCS_INACTIVE | DFCS_PUSHED)))
+                i = COLOR_BTNFACE;
+            else
+                i = COLOR_WINDOW;
+            SetTextColor(dc, GetSysColor(i));
+            TextOut(dc, X, Y, &Center, 1);
+
+            SetTextColor(dc, RGB(180, 185, 198));
             TextOut(dc, X, Y, &OutRight, 1);
-            SetTextColor(dc, GetSysColor(COLOR_BTNHIGHLIGHT));
             TextOut(dc, X, Y, &OutLeft, 1);
-            SetTextColor(dc, GetSysColor(COLOR_3DDKSHADOW));
             TextOut(dc, X, Y, &InRight, 1);
-            SetTextColor(dc, GetSysColor(COLOR_3DLIGHT));
             TextOut(dc, X, Y, &InLeft, 1);
         }
 
@@ -759,7 +751,7 @@ static BOOL UITOOLS95_DFC_ButtonCheckRadio(HDC dc, LPRECT r, UINT uFlags, BOOL R
         {
             TCHAR Check = (Radio) ? 'i' : 'b';
 
-            SetTextColor(dc, GetSysColor((uFlags & DFCS_INACTIVE) ? COLOR_BTNSHADOW : COLOR_WINDOWTEXT));
+            SetTextColor(dc, (uFlags & DFCS_INACTIVE) ? GetSysColor(COLOR_BTNSHADOW) : RGB(255, 255, 255));
             TextOut(dc, X, Y, &Check, 1);
         }
     }

@@ -1644,6 +1644,20 @@ LdrpInitializeProcessCompat(PVOID pProcessActctx, PVOID* pOldShimData)
         }
     }
 
+    /* If the PE image targets NT 6.0+ (Vista/7/8/10/11) in its OptionalHeader,
+       automatically upgrade the process PEB OS version to Windows 10 (10.0.19045) */
+    {
+        PPEB Peb = NtCurrentPeb();
+        PIMAGE_NT_HEADERS NtHeaders = RtlImageNtHeader(Peb->ImageBaseAddress);
+        if (NtHeaders && NtHeaders->OptionalHeader.MajorSubsystemVersion >= 6)
+        {
+            Peb->OSMajorVersion = 10;
+            Peb->OSMinorVersion = 0;
+            Peb->OSBuildNumber  = 19045;
+            Peb->OSCSDVersion   = 0;
+        }
+    }
+
     SizeRequired = sizeof(Buffer);
     Status = RtlQueryInformationActivationContext(RTL_QUERY_ACTIVATION_CONTEXT_FLAG_NO_ADDREF,
                                                   pProcessActctx,
@@ -1664,19 +1678,17 @@ LdrpInitializeProcessCompat(PVOID pProcessActctx, PVOID* pOldShimData)
     if (ContextCompatInfo->ElementCount == 0)
         return;
 
-    /* Search for known GUIDs, starting from oldest to newest.
-       Note that on Windows it is somewhat reversed, starting from the latest known
-       version, going down. But we are not Windows, trying to allow a lower version,
-       we are ReactOS trying to fake a higher version. So we interpret what Windows
-       does as "try the closest version to the actual version", so we start with the
-       lowest version, which is closest to Windows 2003, which we mostly are. */
-    for (cur = RTL_NUMBER_OF(KnownCompatGuids) - 1; cur != -1; --cur)
+    /* kilsesiOS: Search for known GUIDs starting from newest (Windows 10) to oldest,
+       matching Windows 10/11 behavior so modern manifests get Windows 10 compatibility. */
+    for (cur = 0; cur < RTL_NUMBER_OF(KnownCompatGuids); ++cur)
     {
         for (n = 0; n < ContextCompatInfo->ElementCount; ++n)
         {
             if (ContextCompatInfo->Elements[n].Type == ACTCTX_COMPATIBILITY_ELEMENT_TYPE_OS &&
                 RtlCompareMemory(&ContextCompatInfo->Elements[n].Id, KnownCompatGuids[cur].Guid, sizeof(GUID)) == sizeof(GUID))
             {
+                PPEB Peb = NtCurrentPeb();
+
                 if (LdrpDisableProcessCompatGuidDetection())
                 {
                     DPRINT1("LdrpInitializeProcessCompat: Not applying automatic fix for winver 0x%x due to policy\n", KnownCompatGuids[cur].Version);
@@ -1686,8 +1698,6 @@ LdrpInitializeProcessCompat(PVOID pProcessActctx, PVOID* pOldShimData)
                 /* If this process did not need shim data before, allocate and store it */
                 if (pShimData == NULL)
                 {
-                    PPEB Peb = NtCurrentPeb();
-
                     ASSERT(Peb->pShimData == NULL);
                     pShimData = RtlAllocateHeap(Peb->ProcessHeap, HEAP_ZERO_MEMORY, sizeof(*pShimData));
 
@@ -1708,8 +1718,22 @@ LdrpInitializeProcessCompat(PVOID pProcessActctx, PVOID* pOldShimData)
                     *pOldShimData = pShimData;
                 }
 
-                /* Store the lowest found version, and bail out. */
+                /* Store the highest found version, and update PEB OS version if Win10+ */
                 pShimData->dwRosProcessCompatVersion = KnownCompatGuids[cur].Version;
+                if (KnownCompatGuids[cur].Version >= _WIN32_WINNT_WIN10)
+                {
+                    Peb->OSMajorVersion = 10;
+                    Peb->OSMinorVersion = 0;
+                    Peb->OSBuildNumber  = 19045;
+                    Peb->OSCSDVersion   = 0;
+                }
+                else if (KnownCompatGuids[cur].Version >= _WIN32_WINNT_VISTA)
+                {
+                    Peb->OSMajorVersion = (KnownCompatGuids[cur].Version >> 8) & 0xFF;
+                    Peb->OSMinorVersion = KnownCompatGuids[cur].Version & 0xFF;
+                    Peb->OSBuildNumber  = 9600;
+                    Peb->OSCSDVersion   = 0;
+                }
                 DPRINT1("LdrpInitializeProcessCompat: Found guid for winver 0x%x in manifest from %wZ\n",
                         KnownCompatGuids[cur].Version,
                         &(NtCurrentPeb()->ProcessParameters->ImagePathName));

@@ -69,7 +69,8 @@ ApiSetResolveToHost(
         LONG result = RtlCompareUnicodeString(&Tmp, &g_Apisets[Index].Name, TRUE);
         if (result == 0)
         {
-            // Check if this version is included
+            /* kilsesiOS: Always resolve Windows 7/8/8.1/10/11 API Sets */
+            ApisetVersion |= (APISET_WIN7 | APISET_WIN8 | APISET_WIN81 | APISET_WIN10);
             if (g_Apisets[Index].dwOsVersions & ApisetVersion)
             {
                 // Return a static string (does not have to be freed)

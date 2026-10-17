@@ -53,8 +53,68 @@ static HWND g_hKilsesiDockWnd  = NULL;
 
 static LRESULT CALLBACK KilsesiAboutWndProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 {
+    static HBRUSH s_hSheetBg = NULL;
+    static HFONT  s_hCtrlFont = NULL;
+
     switch (uMsg)
     {
+        case WM_CREATE:
+        {
+            if (!s_hSheetBg)
+                s_hSheetBg = CreateSolidBrush(RGB(246, 246, 250));
+            if (!s_hCtrlFont)
+                s_hCtrlFont = CreateFontW(-11, 0, 0, 0, FW_NORMAL, FALSE, FALSE, FALSE,
+                                          DEFAULT_CHARSET, OUT_DEFAULT_PRECIS, CLIP_DEFAULT_PRECIS,
+                                          DEFAULT_QUALITY, DEFAULT_PITCH | FF_SWISS, L"Tahoma");
+
+            HWND hChk1 = CreateWindowExW(0, L"BUTTON",
+                L"Win10/11 API Sets (api-ms-win-*) & NT 10.0.19045",
+                WS_CHILD | WS_VISIBLE | BS_AUTOCHECKBOX,
+                136, 138, 276, 18, hwnd, (HMENU)201, hExplorerInstance, NULL);
+            HWND hChk2 = CreateWindowExW(0, L"BUTTON",
+                L"Wine DirectX 11/12, Direct2D & DirectWrite Layer",
+                WS_CHILD | WS_VISIBLE | BS_AUTOCHECKBOX,
+                136, 158, 276, 18, hwnd, (HMENU)202, hExplorerInstance, NULL);
+
+            SendMessageW(hChk1, BM_SETCHECK, BST_CHECKED, 0);
+            SendMessageW(hChk2, BM_SETCHECK, BST_CHECKED, 0);
+            SendMessageW(hChk1, WM_SETFONT, (WPARAM)s_hCtrlFont, TRUE);
+            SendMessageW(hChk2, WM_SETFONT, (WPARAM)s_hCtrlFont, TRUE);
+
+            HWND hBtn1 = CreateWindowExW(0, L"BUTTON",
+                L"Open Terminal",
+                WS_CHILD | WS_VISIBLE | BS_DEFPUSHBUTTON,
+                136, 186, 124, 28, hwnd, (HMENU)101, hExplorerInstance, NULL);
+            HWND hBtn2 = CreateWindowExW(0, L"BUTTON",
+                L"DirectX Diag",
+                WS_CHILD | WS_VISIBLE | BS_PUSHBUTTON,
+                270, 186, 124, 28, hwnd, (HMENU)102, hExplorerInstance, NULL);
+
+            SendMessageW(hBtn1, WM_SETFONT, (WPARAM)s_hCtrlFont, TRUE);
+            SendMessageW(hBtn2, WM_SETFONT, (WPARAM)s_hCtrlFont, TRUE);
+            return 0;
+        }
+
+        case WM_CTLCOLORSTATIC:
+        case WM_CTLCOLORBTN:
+        {
+            HDC hdcStatic = (HDC)wParam;
+            SetBkMode(hdcStatic, TRANSPARENT);
+            SetTextColor(hdcStatic, RGB(45, 45, 55));
+            if (!s_hSheetBg)
+                s_hSheetBg = CreateSolidBrush(RGB(246, 246, 250));
+            return (LRESULT)s_hSheetBg;
+        }
+
+        case WM_COMMAND:
+        {
+            if (LOWORD(wParam) == 101)
+                ShellExecuteW(NULL, L"open", L"cmd.exe", NULL, NULL, SW_SHOWNORMAL);
+            else if (LOWORD(wParam) == 102)
+                ShellExecuteW(NULL, L"open", L"dxdiag.exe", NULL, NULL, SW_SHOWNORMAL);
+            return 0;
+        }
+
         case WM_ERASEBKGND:
             return 1;
 
@@ -75,17 +135,17 @@ static LRESULT CALLBACK KilsesiAboutWndProc(HWND hwnd, UINT uMsg, WPARAM wParam,
             HPEN hPen1 = CreatePen(PS_SOLID, 2, RGB(24, 92, 190));
             HGDIOBJ hOldBr = SelectObject(hdc, hRing1);
             HGDIOBJ hOldPen = SelectObject(hdc, hPen1);
-            Ellipse(hdc, 28, 34, 116, 122);
+            Ellipse(hdc, 28, 38, 116, 126);
 
             HBRUSH hRing2 = CreateSolidBrush(RGB(138, 68, 186));
             HPEN hPen2 = CreatePen(PS_SOLID, 2, RGB(255, 255, 255));
             SelectObject(hdc, hRing2);
             SelectObject(hdc, hPen2);
-            Ellipse(hdc, 44, 50, 100, 106);
+            Ellipse(hdc, 44, 54, 100, 110);
 
             HBRUSH hRing3 = CreateSolidBrush(RGB(48, 209, 88));
             SelectObject(hdc, hRing3);
-            Ellipse(hdc, 60, 66, 84, 90);
+            Ellipse(hdc, 60, 70, 84, 94);
 
             SelectObject(hdc, hOldBr);
             SelectObject(hdc, hOldPen);
@@ -110,71 +170,29 @@ static LRESULT CALLBACK KilsesiAboutWndProc(HWND hwnd, UINT uMsg, WPARAM wParam,
 
             HGDIOBJ hOldFont = SelectObject(hdc, hTitleFont);
             SetTextColor(hdc, RGB(24, 24, 28));
-            RECT rcText = { 136, 26, rc.right - 16, 54 };
+            RECT rcText = { 136, 20, rc.right - 16, 48 };
             DrawTextW(hdc, L"kilsesiOS Sonoma", -1, &rcText, DT_LEFT | DT_SINGLELINE | DT_VCENTER);
 
             SelectObject(hdc, hSubFont);
             SetTextColor(hdc, RGB(0, 122, 255));
-            RECT rcSub = { 136, 52, rc.right - 16, 72 };
-            DrawTextW(hdc, L"Version 15.0 (macOS Edition)", -1, &rcSub, DT_LEFT | DT_SINGLELINE | DT_VCENTER);
+            RECT rcSub = { 136, 46, rc.right - 16, 66 };
+            DrawTextW(hdc, L"Version 15.0 (macOS UI + Win10/11 Wine)", -1, &rcSub, DT_LEFT | DT_SINGLELINE | DT_VCENTER);
 
             SelectObject(hdc, hBodyFont);
             SetTextColor(hdc, RGB(70, 70, 82));
-            RECT rcSpec1 = { 136, 78, rc.right - 16, 96 };
-            DrawTextW(hdc, L"Kernel:     Darwin / ReactOS NT 5.2 Hybrid", -1, &rcSpec1, DT_LEFT | DT_SINGLELINE);
-            RECT rcSpec2 = { 136, 96, rc.right - 16, 114 };
-            DrawTextW(hdc, L"Graphics:   Aqua Quartz-GDI Engine", -1, &rcSpec2, DT_LEFT | DT_SINGLELINE);
-            RECT rcSpec3 = { 136, 114, rc.right - 16, 132 };
-            DrawTextW(hdc, L"Shell:      macOS Menu Bar & Rounded Dock", -1, &rcSpec3, DT_LEFT | DT_SINGLELINE);
+            RECT rcSpec1 = { 136, 72, rc.right - 16, 90 };
+            DrawTextW(hdc, L"Kernel:     Darwin / NT 10.0 Build 19045 Hybrid", -1, &rcSpec1, DT_LEFT | DT_SINGLELINE);
+            RECT rcSpec2 = { 136, 90, rc.right - 16, 108 };
+            DrawTextW(hdc, L"Graphics:   Aqua Quartz-GDI + Wine D3D10/11/12", -1, &rcSpec2, DT_LEFT | DT_SINGLELINE);
+            RECT rcSpec3 = { 136, 108, rc.right - 16, 126 };
+            DrawTextW(hdc, L"Controls:   Native Rounded Aqua Buttons & Checks", -1, &rcSpec3, DT_LEFT | DT_SINGLELINE);
 
-            /* Draw two macOS-style rounded action buttons at the bottom */
-            HBRUSH hBtnBlue = CreateSolidBrush(RGB(0, 122, 255));
-            HPEN hBtnPen = CreatePen(PS_SOLID, 1, RGB(0, 100, 220));
-            SelectObject(hdc, hBtnBlue);
-            SelectObject(hdc, hBtnPen);
-            RoundRect(hdc, 136, 144, 250, 172, 10, 10);
-
-            SetTextColor(hdc, RGB(255, 255, 255));
-            SelectObject(hdc, hSubFont);
-            RECT rcBtn1 = { 136, 144, 250, 172 };
-            DrawTextW(hdc, L"Open Terminal", -1, &rcBtn1, DT_CENTER | DT_VCENTER | DT_SINGLELINE);
-
-            HBRUSH hBtnGray = CreateSolidBrush(RGB(228, 228, 236));
-            HPEN hBtnGrayPen = CreatePen(PS_SOLID, 1, RGB(195, 195, 206));
-            SelectObject(hdc, hBtnGray);
-            SelectObject(hdc, hBtnGrayPen);
-            RoundRect(hdc, 260, 144, 374, 172, 10, 10);
-
-            SetTextColor(hdc, RGB(32, 32, 40));
-            RECT rcBtn2 = { 260, 144, 374, 172 };
-            DrawTextW(hdc, L"Open Notes", -1, &rcBtn2, DT_CENTER | DT_VCENTER | DT_SINGLELINE);
-
-            SelectObject(hdc, hOldBr);
-            SelectObject(hdc, hOldPen);
             SelectObject(hdc, hOldFont);
-            DeleteObject(hBtnBlue);
-            DeleteObject(hBtnPen);
-            DeleteObject(hBtnGray);
-            DeleteObject(hBtnGrayPen);
             DeleteObject(hTitleFont);
             DeleteObject(hSubFont);
             DeleteObject(hBodyFont);
 
             EndPaint(hwnd, &ps);
-            return 0;
-        }
-
-        case WM_LBUTTONDOWN:
-        {
-            int x = LOWORD(lParam);
-            int y = HIWORD(lParam);
-            if (y >= 144 && y <= 172)
-            {
-                if (x >= 136 && x <= 250)
-                    ShellExecuteW(NULL, L"open", L"cmd.exe", NULL, NULL, SW_SHOWNORMAL);
-                else if (x >= 260 && x <= 374)
-                    ShellExecuteW(NULL, L"open", L"notepad.exe", NULL, NULL, SW_SHOWNORMAL);
-            }
             return 0;
         }
 
@@ -211,7 +229,7 @@ static VOID CreateKilsesiAboutWindow(VOID)
 
     int cxScreen = GetSystemMetrics(SM_CXSCREEN);
     int cyScreen = GetSystemMetrics(SM_CYSCREEN);
-    int w = 404, h = 218;
+    int w = 436, h = 258;
     int x = (cxScreen - w) / 2;
     int y = (cyScreen - h) / 2 - 20;
 
@@ -219,7 +237,7 @@ static VOID CreateKilsesiAboutWindow(VOID)
         0,
         L"KilsesiAboutWndClass",
         L"About kilsesiOS",
-        WS_OVERLAPPED | WS_CAPTION | WS_SYSMENU | WS_MINIMIZEBOX | WS_MAXIMIZEBOX | WS_VISIBLE,
+        WS_OVERLAPPED | WS_CAPTION | WS_SYSMENU | WS_MINIMIZEBOX | WS_MAXIMIZEBOX | WS_VISIBLE | WS_CLIPCHILDREN,
         x, y, w, h,
         NULL, NULL, hExplorerInstance, NULL);
 }
@@ -631,8 +649,8 @@ public:
 
     HWND Create(HWND hwndParent)
     {
-        WCHAR szStartCaption[32];
-        wcscpy(szStartCaption, L"kilsesiOS");
+        WCHAR szStartCaption[64];
+        wcscpy(szStartCaption, L"kilsesiOS   Finder   File   Edit   View   Go   Help");
 
         DWORD dwStyle = WS_CHILD | WS_VISIBLE | WS_CLIPSIBLINGS | BS_PUSHBUTTON | BS_LEFT | BS_VCENTER;
 
