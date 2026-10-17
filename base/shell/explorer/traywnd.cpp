@@ -240,6 +240,12 @@ static VOID CreateKilsesiAboutWindow(VOID)
         WS_OVERLAPPED | WS_CAPTION | WS_SYSMENU | WS_MINIMIZEBOX | WS_MAXIMIZEBOX | WS_VISIBLE | WS_CLIPCHILDREN,
         x, y, w, h,
         NULL, NULL, hExplorerInstance, NULL);
+
+    if (g_hKilsesiAboutWnd)
+    {
+        SetWindowPos(g_hKilsesiAboutWnd, HWND_TOP, 0, 0, 0, 0, SWP_NOMOVE | SWP_NOSIZE | SWP_SHOWWINDOW);
+        SetForegroundWindow(g_hKilsesiAboutWnd);
+    }
 }
 
 static HWND g_hKilsesiMenuBar  = NULL;
@@ -491,7 +497,7 @@ static VOID CreateKilsesiMacDock(VOID)
         HRGN hRgn = CreateRoundRectRgn(0, 0, w + 1, h + 1, 22, 22);
         SetWindowRgn(g_hKilsesiDockWnd, hRgn, TRUE);
         SetTimer(g_hKilsesiDockWnd, 1, 2000, NULL);
-        SetTimer(g_hKilsesiDockWnd, 2, 1200, NULL);
+        SetTimer(g_hKilsesiDockWnd, 2, 3000, NULL);
     }
 }
 
@@ -707,7 +713,7 @@ static LRESULT CALLBACK KilsesiMenuBarWndProc(HWND hwnd, UINT uMsg, WPARAM wPara
             SelectObject(hdc, GetStockObject(HOLLOW_BRUSH));
 
             /* Wi-Fi signal icon */
-            int wx = rc.right - 220;
+            int wx = rc.right - 258;
             MoveToEx(hdc, wx - 6, 10, NULL); LineTo(hdc, wx, 6); LineTo(hdc, wx + 7, 10);
             MoveToEx(hdc, wx - 4, 13, NULL); LineTo(hdc, wx, 10); LineTo(hdc, wx + 5, 13);
             HBRUSH hDarkBr = CreateSolidBrush(RGB(42, 46, 56));
@@ -715,14 +721,14 @@ static LRESULT CALLBACK KilsesiMenuBarWndProc(HWND hwnd, UINT uMsg, WPARAM wPara
             Ellipse(hdc, wx - 1, 15, wx + 2, 18);
 
             /* Volume / Speaker icon */
-            int vx = rc.right - 196;
+            int vx = rc.right - 234;
             POINT ptSpk[4] = { {vx, 11}, {vx + 3, 11}, {vx + 7, 7}, {vx + 7, 18} };
             Polygon(hdc, ptSpk, 4);
             SelectObject(hdc, GetStockObject(HOLLOW_BRUSH));
             MoveToEx(hdc, vx + 10, 9, NULL); LineTo(hdc, vx + 12, 12); LineTo(hdc, vx + 10, 16);
 
             /* Battery pill icon (with green charge bar) */
-            int bx = rc.right - 172;
+            int bx = rc.right - 210;
             RoundRect(hdc, bx, 8, bx + 20, 18, 3, 3);
             MoveToEx(hdc, bx + 20, 11, NULL); LineTo(hdc, bx + 20, 15);
             HBRUSH hBattBr = CreateSolidBrush(RGB(46, 194, 126));
@@ -734,7 +740,7 @@ static LRESULT CALLBACK KilsesiMenuBarWndProc(HWND hwnd, UINT uMsg, WPARAM wPara
             DeleteObject(hBattPen);
 
             /* Control Center dual toggle switches */
-            int ccx = rc.right - 140;
+            int ccx = rc.right - 178;
             SelectObject(hdc, hIconPen);
             SelectObject(hdc, GetStockObject(HOLLOW_BRUSH));
             RoundRect(hdc, ccx, 6, ccx + 14, 12, 5, 5);
@@ -744,7 +750,7 @@ static LRESULT CALLBACK KilsesiMenuBarWndProc(HWND hwnd, UINT uMsg, WPARAM wPara
             Ellipse(hdc, ccx + 1, 14, ccx + 6, 18);
 
             /* Spotlight magnifying glass */
-            int sx = rc.right - 116;
+            int sx = rc.right - 154;
             SelectObject(hdc, GetStockObject(HOLLOW_BRUSH));
             Ellipse(hdc, sx, 7, sx + 9, 16);
             SelectObject(hdc, hIconBoldPen);
@@ -768,7 +774,7 @@ static LRESULT CALLBACK KilsesiMenuBarWndProc(HWND hwnd, UINT uMsg, WPARAM wPara
 
             SelectObject(hdc, hRegFont);
             SetTextColor(hdc, RGB(28, 30, 38));
-            RECT rcClock = { rc.right - 100, 0, rc.right - 8, rc.bottom - 1 };
+            RECT rcClock = { rc.right - 136, 0, rc.right - 10, rc.bottom - 1 };
             DrawTextW(hdc, szClock, -1, &rcClock, DT_RIGHT | DT_VCENTER | DT_SINGLELINE);
 
             SelectObject(hdc, hOldFont);
