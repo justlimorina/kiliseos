@@ -242,26 +242,57 @@ static VOID CreateKilsesiAboutWindow(VOID)
         NULL, NULL, hExplorerInstance, NULL);
 }
 
+static HWND g_hKilsesiMenuBar  = NULL;
+
 struct KILSESI_DOCK_ITEM
 {
     LPCWSTR szLabel;
-    LPCWSTR szBadge;
+    UINT    uShellIconId;
     LPCWSTR szCmd;
-    COLORREF clrBg;
-    COLORREF clrFg;
-    BOOL bRunning;
+    LPCWSTR szArgs;
+    BOOL    bRunning;
 };
 
-static const KILSESI_DOCK_ITEM g_DockItems[7] =
+static const KILSESI_DOCK_ITEM g_DockItems[9] =
 {
-    { L"Finder",   L":)", L"explorer.exe", RGB(28, 142, 255),  RGB(255, 255, 255), TRUE  },
-    { L"Terminal", L">_", L"cmd.exe",      RGB(30, 32, 38),    RGB(48, 209, 88),   FALSE },
-    { L"Notes",    L"=",  L"notepad.exe",  RGB(255, 198, 10),  RGB(45, 45, 50),    FALSE },
-    { L"Calc",     L"+-", L"calc.exe",     RGB(255, 149, 0),   RGB(255, 255, 255), FALSE },
-    { L"Paint",    L"P",  L"mspaint.exe",  RGB(175, 82, 222),  RGB(255, 255, 255), FALSE },
-    { L"Monitor",  L"~",  L"taskmgr.exe",  RGB(24, 42, 48),    RGB(48, 209, 88),   FALSE },
-    { L"About",    L"i",  NULL,            RGB(0, 122, 255),   RGB(255, 255, 255), TRUE  }
+    { L"Finder",         46,  L"explorer.exe", NULL, TRUE  },
+    { L"Web",            512, L"iexplore.exe", NULL, FALSE },
+    { L"Terminal",       278, L"cmd.exe",      NULL, FALSE },
+    { L"Text Editor",    152, L"notepad.exe",  NULL, FALSE },
+    { L"Calculator",     171, L"calc.exe",     NULL, FALSE },
+    { L"Graphics",       226, L"mspaint.exe",  NULL, FALSE },
+    { L"System Monitor", 275, L"taskmgr.exe",  NULL, FALSE },
+    { L"About kilsesiOS",24,  NULL,            NULL, TRUE  },
+    { L"Trash",          32,  L"explorer.exe", L"::{645FF040-5081-101B-9F08-00AA002F954E}", FALSE }
 };
+
+static HICON g_hDockIcons[9] = { NULL };
+static INT   g_iDockHover    = -1;
+
+static VOID EnsureKilsesiDockIconsLoaded(VOID)
+{
+    HMODULE hShell32 = GetModuleHandleW(L"shell32.dll");
+    if (!hShell32)
+        hShell32 = LoadLibraryW(L"shell32.dll");
+
+    for (int i = 0; i < 9; i++)
+    {
+        if (!g_hDockIcons[i] && hShell32)
+        {
+            g_hDockIcons[i] = (HICON)LoadImageW(
+                hShell32,
+                MAKEINTRESOURCEW(g_DockItems[i].uShellIconId),
+                IMAGE_ICON,
+                32, 32,
+                0);
+        }
+    }
+}
+
+static INT GetKilsesiDockItemX(int index)
+{
+    return 14 + index * 46 + (index >= 7 ? 10 : 0);
+}
 
 static LRESULT CALLBACK KilsesiDockWndProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 {
@@ -270,6 +301,43 @@ static LRESULT CALLBACK KilsesiDockWndProc(HWND hwnd, UINT uMsg, WPARAM wParam, 
         case WM_ERASEBKGND:
             return 1;
 
+        case WM_MOUSEMOVE:
+        {
+            int x = (short)LOWORD(lParam);
+            int y = (short)HIWORD(lParam);
+            int newHover = -1;
+            if (y >= 4 && y <= 46)
+            {
+                for (int i = 0; i < 9; i++)
+                {
+                    int xLeft = GetKilsesiDockItemX(i);
+                    if (x >= xLeft - 4 && x <= xLeft + 36)
+                    {
+                        newHover = i;
+                        break;
+                    }
+                }
+            }
+            if (newHover != g_iDockHover)
+            {
+                g_iDockHover = newHover;
+                InvalidateRect(hwnd, NULL, FALSE);
+            }
+            TRACKMOUSEEVENT tme = { sizeof(tme), TME_LEAVE, hwnd, 0 };
+            TrackMouseEvent(&tme);
+            return 0;
+        }
+
+        case WM_MOUSELEAVE:
+        {
+            if (g_iDockHover != -1)
+            {
+                g_iDockHover = -1;
+                InvalidateRect(hwnd, NULL, FALSE);
+            }
+            return 0;
+        }
+
         case WM_PAINT:
         {
             PAINTSTRUCT ps;
@@ -277,80 +345,73 @@ static LRESULT CALLBACK KilsesiDockWndProc(HWND hwnd, UINT uMsg, WPARAM wParam, 
             RECT rc;
             GetClientRect(hwnd, &rc);
 
-            /* Draw rounded translucent-style macOS Dock pill background */
-            HBRUSH hDockBg = CreateSolidBrush(RGB(238, 240, 248));
-            HPEN hDockBorder = CreatePen(PS_SOLID, 2, RGB(180, 188, 208));
+            EnsureKilsesiDockIconsLoaded();
+
+            /* Sleek icon-only macOS / GNOME Adwaita Dock pill (no permanent text titles) */
+            HBRUSH hDockBg = CreateSolidBrush(RGB(242, 244, 250));
+            HPEN hDockBorder = CreatePen(PS_SOLID, 1, RGB(186, 194, 212));
             HGDIOBJ hOldBr = SelectObject(hdc, hDockBg);
             HGDIOBJ hOldPen = SelectObject(hdc, hDockBorder);
 
-            RoundRect(hdc, 0, 0, rc.right, rc.bottom, 24, 24);
+            RoundRect(hdc, 0, 0, rc.right, rc.bottom, 22, 22);
 
-            HFONT hBadgeFont = CreateFontW(-15, 0, 0, 0, FW_BOLD, FALSE, FALSE, FALSE,
-                                           DEFAULT_CHARSET, OUT_DEFAULT_PRECIS, CLIP_DEFAULT_PRECIS,
-                                           DEFAULT_QUALITY, DEFAULT_PITCH | FF_SWISS, L"Tahoma");
-            HFONT hLabelFont = CreateFontW(-10, 0, 0, 0, FW_NORMAL, FALSE, FALSE, FALSE,
-                                           DEFAULT_CHARSET, OUT_DEFAULT_PRECIS, CLIP_DEFAULT_PRECIS,
-                                           DEFAULT_QUALITY, DEFAULT_PITCH | FF_SWISS, L"Tahoma");
-            HGDIOBJ hOldFont = SelectObject(hdc, hBadgeFont);
-            SetBkMode(hdc, TRANSPARENT);
+            /* Subtle inner highlight rim */
+            HPEN hInnerRim = CreatePen(PS_SOLID, 1, RGB(252, 253, 255));
+            SelectObject(hdc, GetStockObject(HOLLOW_BRUSH));
+            SelectObject(hdc, hInnerRim);
+            RoundRect(hdc, 1, 1, rc.right - 1, rc.bottom - 1, 20, 20);
+            DeleteObject(hInnerRim);
 
-            for (int i = 0; i < 7; i++)
+            for (int i = 0; i < 9; i++)
             {
-                int xLeft = 16 + i * 62 + (i == 6 ? 10 : 0);
-                int yTop  = 7;
-                int size  = 38;
+                int xLeft = GetKilsesiDockItemX(i);
+                int yTop  = 8;
+                int size  = 32;
 
-                /* Draw vertical Dock divider before the 7th item */
-                if (i == 6)
+                /* Vertical Dock separator before About & Trash */
+                if (i == 7)
                 {
-                    HPEN hDivPen = CreatePen(PS_SOLID, 1, RGB(185, 192, 210));
+                    HPEN hDivPen = CreatePen(PS_SOLID, 1, RGB(196, 202, 218));
                     SelectObject(hdc, hDivPen);
-                    MoveToEx(hdc, xLeft - 7, 10, NULL);
-                    LineTo(hdc, xLeft - 7, rc.bottom - 12);
+                    MoveToEx(hdc, xLeft - 6, 10, NULL);
+                    LineTo(hdc, xLeft - 6, rc.bottom - 10);
                     SelectObject(hdc, hOldPen);
                     DeleteObject(hDivPen);
                 }
 
-                /* Draw squircle icon background */
-                HBRUSH hIconBr = CreateSolidBrush(g_DockItems[i].clrBg);
-                HPEN hIconPen  = CreatePen(PS_SOLID, 1, RGB(255, 255, 255));
-                SelectObject(hdc, hIconBr);
-                SelectObject(hdc, hIconPen);
-                RoundRect(hdc, xLeft, yTop, xLeft + size, yTop + size, 12, 12);
+                /* Subtle rounded glass hover highlight */
+                if (g_iDockHover == i)
+                {
+                    HBRUSH hHovBr = CreateSolidBrush(RGB(218, 225, 242));
+                    HPEN hHovPen  = CreatePen(PS_SOLID, 1, RGB(194, 204, 228));
+                    SelectObject(hdc, hHovBr);
+                    SelectObject(hdc, hHovPen);
+                    RoundRect(hdc, xLeft - 4, yTop - 4, xLeft + size + 4, yTop + size + 4, 10, 10);
+                    DeleteObject(hHovBr);
+                    DeleteObject(hHovPen);
+                }
 
-                /* Draw badge glyph inside squircle */
-                SelectObject(hdc, hBadgeFont);
-                SetTextColor(hdc, g_DockItems[i].clrFg);
-                RECT rcBadge = { xLeft, yTop, xLeft + size, yTop + size };
-                DrawTextW(hdc, g_DockItems[i].szBadge, -1, &rcBadge, DT_CENTER | DT_VCENTER | DT_SINGLELINE);
+                /* Draw real 32-bit RGBA GNOME Adwaita icon */
+                if (g_hDockIcons[i])
+                {
+                    DrawIconEx(hdc, xLeft, yTop, g_hDockIcons[i], size, size, 0, NULL, DI_NORMAL);
+                }
 
-                /* Draw label underneath */
-                SelectObject(hdc, hLabelFont);
-                SetTextColor(hdc, RGB(35, 38, 48));
-                RECT rcLbl = { xLeft - 10, yTop + size + 1, xLeft + size + 10, yTop + size + 14 };
-                DrawTextW(hdc, g_DockItems[i].szLabel, -1, &rcLbl, DT_CENTER | DT_TOP | DT_SINGLELINE);
-
-                /* Draw macOS running indicator dot */
+                /* Running indicator dot (4px) underneath active apps */
                 if (g_DockItems[i].bRunning)
                 {
-                    HBRUSH hDotBr = CreateSolidBrush(RGB(40, 44, 52));
-                    HPEN hDotPen  = CreatePen(PS_SOLID, 1, RGB(40, 44, 52));
+                    HBRUSH hDotBr = CreateSolidBrush(RGB(56, 62, 76));
+                    HPEN hDotPen  = CreatePen(PS_SOLID, 1, RGB(56, 62, 76));
                     SelectObject(hdc, hDotBr);
                     SelectObject(hdc, hDotPen);
                     Ellipse(hdc, xLeft + size / 2 - 2, rc.bottom - 6, xLeft + size / 2 + 2, rc.bottom - 2);
                     DeleteObject(hDotBr);
                     DeleteObject(hDotPen);
                 }
-
-                DeleteObject(hIconBr);
-                DeleteObject(hIconPen);
             }
 
             SelectObject(hdc, hOldBr);
             SelectObject(hdc, hOldPen);
-            SelectObject(hdc, hOldFont);
-            DeleteObject(hBadgeFont);
-            DeleteObject(hLabelFont);
             DeleteObject(hDockBg);
             DeleteObject(hDockBorder);
 
@@ -360,14 +421,14 @@ static LRESULT CALLBACK KilsesiDockWndProc(HWND hwnd, UINT uMsg, WPARAM wParam, 
 
         case WM_LBUTTONDOWN:
         {
-            int x = LOWORD(lParam);
-            for (int i = 0; i < 7; i++)
+            int x = (short)LOWORD(lParam);
+            for (int i = 0; i < 9; i++)
             {
-                int xLeft = 16 + i * 62 + (i == 6 ? 10 : 0);
-                if (x >= xLeft - 4 && x <= xLeft + 42)
+                int xLeft = GetKilsesiDockItemX(i);
+                if (x >= xLeft - 4 && x <= xLeft + 36)
                 {
                     if (g_DockItems[i].szCmd)
-                        ShellExecuteW(NULL, L"open", g_DockItems[i].szCmd, NULL, NULL, SW_SHOWNORMAL);
+                        ShellExecuteW(NULL, L"open", g_DockItems[i].szCmd, g_DockItems[i].szArgs, NULL, SW_SHOWNORMAL);
                     else
                         CreateKilsesiAboutWindow();
                     break;
@@ -382,7 +443,7 @@ static LRESULT CALLBACK KilsesiDockWndProc(HWND hwnd, UINT uMsg, WPARAM wParam, 
             {
                 int cxScreen = GetSystemMetrics(SM_CXSCREEN);
                 int cyScreen = GetSystemMetrics(SM_CYSCREEN);
-                int w = 466, h = 66;
+                int w = 436, h = 52;
                 SetWindowPos(hwnd, HWND_TOPMOST, (cxScreen - w) / 2, cyScreen - h - 8, w, h,
                              SWP_NOACTIVATE | SWP_SHOWWINDOW);
             }
@@ -413,7 +474,7 @@ static VOID CreateKilsesiMacDock(VOID)
 
     int cxScreen = GetSystemMetrics(SM_CXSCREEN);
     int cyScreen = GetSystemMetrics(SM_CYSCREEN);
-    int w = 466, h = 66;
+    int w = 436, h = 52;
     int x = (cxScreen - w) / 2;
     int y = cyScreen - h - 8;
 
@@ -427,11 +488,334 @@ static VOID CreateKilsesiMacDock(VOID)
 
     if (g_hKilsesiDockWnd)
     {
-        HRGN hRgn = CreateRoundRectRgn(0, 0, w + 1, h + 1, 24, 24);
+        HRGN hRgn = CreateRoundRectRgn(0, 0, w + 1, h + 1, 22, 22);
         SetWindowRgn(g_hKilsesiDockWnd, hRgn, TRUE);
         SetTimer(g_hKilsesiDockWnd, 1, 2000, NULL);
         SetTimer(g_hKilsesiDockWnd, 2, 1200, NULL);
     }
+}
+
+/* ============================================================================
+ * True Flat Edge-to-Edge macOS / GNOME Adwaita Top Menu Bar (26px)
+ * Replaces the 3D Windows Start Button, sunken Taskbar band, and sunken Tray
+ * ============================================================================ */
+struct KILSESI_MENUBAR_ITEM
+{
+    LPCWSTR szText;
+    INT     xLeft;
+    INT     xRight;
+    BOOL    bBold;
+};
+
+static const KILSESI_MENUBAR_ITEM g_MenuBarItems[9] =
+{
+    { L"",          6,   34,  TRUE  }, /* 0: kilsesiOS Emblem -> Start/Applications Menu */
+    { L"kilsesiOS", 36,  104, TRUE  }, /* 1: System Menu / About kilsesiOS */
+    { L"Finder",    106, 156, TRUE  }, /* 2: Finder / File Manager */
+    { L"File",      158, 192, FALSE }, /* 3: File -> Text Editor */
+    { L"Edit",      194, 228, FALSE }, /* 4: Edit -> Graphics */
+    { L"View",      230, 270, FALSE }, /* 5: View -> System Monitor */
+    { L"Go",        272, 302, FALSE }, /* 6: Go -> Terminal */
+    { L"Window",    304, 360, FALSE }, /* 7: Window -> Calculator */
+    { L"Help",      362, 400, FALSE }  /* 8: Help -> About kilsesiOS */
+};
+
+static INT g_iMenuBarHover = -1;
+
+static LRESULT CALLBACK KilsesiMenuBarWndProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
+{
+    switch (uMsg)
+    {
+        case WM_CREATE:
+            SetTimer(hwnd, 1, 5000, NULL);
+            return 0;
+
+        case WM_ERASEBKGND:
+            return 1;
+
+        case WM_TIMER:
+            InvalidateRect(hwnd, NULL, FALSE);
+            return 0;
+
+        case WM_MOUSEMOVE:
+        {
+            int x = (short)LOWORD(lParam);
+            int newHover = -1;
+            for (int i = 0; i < 9; i++)
+            {
+                if (x >= g_MenuBarItems[i].xLeft && x <= g_MenuBarItems[i].xRight)
+                {
+                    newHover = i;
+                    break;
+                }
+            }
+            if (newHover != g_iMenuBarHover)
+            {
+                g_iMenuBarHover = newHover;
+                InvalidateRect(hwnd, NULL, FALSE);
+            }
+            TRACKMOUSEEVENT tme = { sizeof(tme), TME_LEAVE, hwnd, 0 };
+            TrackMouseEvent(&tme);
+            return 0;
+        }
+
+        case WM_MOUSELEAVE:
+        {
+            if (g_iMenuBarHover != -1)
+            {
+                g_iMenuBarHover = -1;
+                InvalidateRect(hwnd, NULL, FALSE);
+            }
+            return 0;
+        }
+
+        case WM_LBUTTONDOWN:
+        {
+            int x = (short)LOWORD(lParam);
+            RECT rc;
+            GetClientRect(hwnd, &rc);
+
+            for (int i = 0; i < 9; i++)
+            {
+                if (x >= g_MenuBarItems[i].xLeft && x <= g_MenuBarItems[i].xRight)
+                {
+                    switch (i)
+                    {
+                        case 0:
+                            ::PostMessageW(GetParent(hwnd), TWM_OPENSTARTMENU, 0, 0);
+                            break;
+                        case 1:
+                        case 8:
+                            CreateKilsesiAboutWindow();
+                            break;
+                        case 2:
+                            ShellExecuteW(NULL, L"open", L"explorer.exe", NULL, NULL, SW_SHOWNORMAL);
+                            break;
+                        case 3:
+                            ShellExecuteW(NULL, L"open", L"notepad.exe", NULL, NULL, SW_SHOWNORMAL);
+                            break;
+                        case 4:
+                            ShellExecuteW(NULL, L"open", L"mspaint.exe", NULL, NULL, SW_SHOWNORMAL);
+                            break;
+                        case 5:
+                            ShellExecuteW(NULL, L"open", L"taskmgr.exe", NULL, NULL, SW_SHOWNORMAL);
+                            break;
+                        case 6:
+                            ShellExecuteW(NULL, L"open", L"cmd.exe", NULL, NULL, SW_SHOWNORMAL);
+                            break;
+                        case 7:
+                            ShellExecuteW(NULL, L"open", L"calc.exe", NULL, NULL, SW_SHOWNORMAL);
+                            break;
+                    }
+                    return 0;
+                }
+            }
+
+            /* Right-side status icon clicks */
+            if (x >= rc.right - 165 && x <= rc.right - 115)
+            {
+                ShellExecuteW(NULL, L"open", L"control.exe", NULL, NULL, SW_SHOWNORMAL);
+            }
+            else if (x > rc.right - 115)
+            {
+                CreateKilsesiAboutWindow();
+            }
+            return 0;
+        }
+
+        case WM_PAINT:
+        {
+            PAINTSTRUCT ps;
+            HDC hdc = BeginPaint(hwnd, &ps);
+            RECT rc;
+            GetClientRect(hwnd, &rc);
+
+            /* 1. Flat translucent-style macOS / Adwaita Top Bar surface (no 3D bevels!) */
+            RECT rcBg = { 0, 0, rc.right, rc.bottom - 1 };
+            HBRUSH hBarBg = CreateSolidBrush(RGB(246, 247, 252));
+            FillRect(hdc, &rcBg, hBarBg);
+            DeleteObject(hBarBg);
+
+            RECT rcLine = { 0, rc.bottom - 1, rc.right, rc.bottom };
+            HBRUSH hLineBr = CreateSolidBrush(RGB(206, 210, 222));
+            FillRect(hdc, &rcLine, hLineBr);
+            DeleteObject(hLineBr);
+
+            HFONT hBoldFont = CreateFontW(-12, 0, 0, 0, FW_BOLD, FALSE, FALSE, FALSE,
+                                          DEFAULT_CHARSET, OUT_DEFAULT_PRECIS, CLIP_DEFAULT_PRECIS,
+                                          ANTIALIASED_QUALITY, DEFAULT_PITCH | FF_SWISS, L"Tahoma");
+            HFONT hRegFont  = CreateFontW(-12, 0, 0, 0, FW_NORMAL, FALSE, FALSE, FALSE,
+                                          DEFAULT_CHARSET, OUT_DEFAULT_PRECIS, CLIP_DEFAULT_PRECIS,
+                                          ANTIALIASED_QUALITY, DEFAULT_PITCH | FF_SWISS, L"Tahoma");
+
+            HGDIOBJ hOldFont = SelectObject(hdc, hRegFont);
+            HGDIOBJ hOldBr   = SelectObject(hdc, GetStockObject(HOLLOW_BRUSH));
+            HGDIOBJ hOldPen  = SelectObject(hdc, GetStockObject(NULL_PEN));
+            SetBkMode(hdc, TRANSPARENT);
+
+            /* 2. Draw Left Menu Bar items */
+            for (int i = 0; i < 9; i++)
+            {
+                if (g_iMenuBarHover == i)
+                {
+                    HBRUSH hHovBr = CreateSolidBrush(RGB(222, 227, 240));
+                    HPEN hHovPen  = CreatePen(PS_SOLID, 1, RGB(210, 216, 232));
+                    SelectObject(hdc, hHovBr);
+                    SelectObject(hdc, hHovPen);
+                    RoundRect(hdc, g_MenuBarItems[i].xLeft, 3, g_MenuBarItems[i].xRight, rc.bottom - 3, 6, 6);
+                    SelectObject(hdc, hOldBr);
+                    SelectObject(hdc, hOldPen);
+                    DeleteObject(hHovBr);
+                    DeleteObject(hHovPen);
+                }
+
+                if (i == 0)
+                {
+                    /* Draw sleek kilsesiOS / Sonoma geometric emblem at (13, 6..20) */
+                    HBRUSH hLogo1 = CreateSolidBrush(RGB(28, 113, 216));
+                    HPEN hLogoPen = CreatePen(PS_SOLID, 1, RGB(24, 92, 190));
+                    SelectObject(hdc, hLogo1);
+                    SelectObject(hdc, hLogoPen);
+                    Ellipse(hdc, 13, 6, 27, 20);
+
+                    HBRUSH hLogo2 = CreateSolidBrush(RGB(246, 247, 252));
+                    HPEN hLogoPen2 = CreatePen(PS_SOLID, 1, RGB(246, 247, 252));
+                    SelectObject(hdc, hLogo2);
+                    SelectObject(hdc, hLogoPen2);
+                    Ellipse(hdc, 17, 10, 23, 16);
+
+                    SelectObject(hdc, hOldBr);
+                    SelectObject(hdc, hOldPen);
+                    DeleteObject(hLogo1);
+                    DeleteObject(hLogoPen);
+                    DeleteObject(hLogo2);
+                    DeleteObject(hLogoPen2);
+                }
+                else
+                {
+                    SelectObject(hdc, g_MenuBarItems[i].bBold ? hBoldFont : hRegFont);
+                    SetTextColor(hdc, RGB(28, 30, 38));
+                    RECT rcItem = { g_MenuBarItems[i].xLeft, 0, g_MenuBarItems[i].xRight, rc.bottom - 1 };
+                    DrawTextW(hdc, g_MenuBarItems[i].szText, -1, &rcItem, DT_CENTER | DT_VCENTER | DT_SINGLELINE);
+                }
+            }
+
+            /* 3. Draw Right-Side Flat macOS / Adwaita Status Bar Icons & Live Clock */
+            HPEN hIconPen = CreatePen(PS_SOLID, 1, RGB(42, 46, 56));
+            HPEN hIconBoldPen = CreatePen(PS_SOLID, 2, RGB(42, 46, 56));
+            SelectObject(hdc, hIconPen);
+            SelectObject(hdc, GetStockObject(HOLLOW_BRUSH));
+
+            /* Wi-Fi signal icon */
+            int wx = rc.right - 220;
+            MoveToEx(hdc, wx - 6, 10, NULL); LineTo(hdc, wx, 6); LineTo(hdc, wx + 7, 10);
+            MoveToEx(hdc, wx - 4, 13, NULL); LineTo(hdc, wx, 10); LineTo(hdc, wx + 5, 13);
+            HBRUSH hDarkBr = CreateSolidBrush(RGB(42, 46, 56));
+            SelectObject(hdc, hDarkBr);
+            Ellipse(hdc, wx - 1, 15, wx + 2, 18);
+
+            /* Volume / Speaker icon */
+            int vx = rc.right - 196;
+            POINT ptSpk[4] = { {vx, 11}, {vx + 3, 11}, {vx + 7, 7}, {vx + 7, 18} };
+            Polygon(hdc, ptSpk, 4);
+            SelectObject(hdc, GetStockObject(HOLLOW_BRUSH));
+            MoveToEx(hdc, vx + 10, 9, NULL); LineTo(hdc, vx + 12, 12); LineTo(hdc, vx + 10, 16);
+
+            /* Battery pill icon (with green charge bar) */
+            int bx = rc.right - 172;
+            RoundRect(hdc, bx, 8, bx + 20, 18, 3, 3);
+            MoveToEx(hdc, bx + 20, 11, NULL); LineTo(hdc, bx + 20, 15);
+            HBRUSH hBattBr = CreateSolidBrush(RGB(46, 194, 126));
+            HPEN hBattPen  = CreatePen(PS_SOLID, 1, RGB(46, 194, 126));
+            SelectObject(hdc, hBattBr);
+            SelectObject(hdc, hBattPen);
+            RoundRect(hdc, bx + 2, 10, bx + 16, 16, 2, 2);
+            DeleteObject(hBattBr);
+            DeleteObject(hBattPen);
+
+            /* Control Center dual toggle switches */
+            int ccx = rc.right - 140;
+            SelectObject(hdc, hIconPen);
+            SelectObject(hdc, GetStockObject(HOLLOW_BRUSH));
+            RoundRect(hdc, ccx, 6, ccx + 14, 12, 5, 5);
+            RoundRect(hdc, ccx, 13, ccx + 14, 19, 5, 5);
+            SelectObject(hdc, hDarkBr);
+            Ellipse(hdc, ccx + 8, 7, ccx + 13, 11);
+            Ellipse(hdc, ccx + 1, 14, ccx + 6, 18);
+
+            /* Spotlight magnifying glass */
+            int sx = rc.right - 116;
+            SelectObject(hdc, GetStockObject(HOLLOW_BRUSH));
+            Ellipse(hdc, sx, 7, sx + 9, 16);
+            SelectObject(hdc, hIconBoldPen);
+            MoveToEx(hdc, sx + 8, 15, NULL);
+            LineTo(hdc, sx + 12, 19);
+
+            /* Live Date & Time Clock */
+            SYSTEMTIME st;
+            GetLocalTime(&st);
+            static const LPCWSTR s_Days[7] = { L"Sun", L"Mon", L"Tue", L"Wed", L"Thu", L"Fri", L"Sat" };
+            static const LPCWSTR s_Mons[12] = { L"Jan", L"Feb", L"Mar", L"Apr", L"May", L"Jun",
+                                                L"Jul", L"Aug", L"Sep", L"Oct", L"Nov", L"Dec" };
+            int hr12 = st.wHour % 12;
+            if (hr12 == 0) hr12 = 12;
+            LPCWSTR szAmPm = (st.wHour >= 12) ? L"PM" : L"AM";
+            WCHAR szClock[64];
+            wsprintfW(szClock, L"%s %s %u  %d:%02u %s",
+                      s_Days[st.wDayOfWeek % 7],
+                      s_Mons[(st.wMonth >= 1 && st.wMonth <= 12) ? (st.wMonth - 1) : 0],
+                      st.wDay, hr12, st.wMinute, szAmPm);
+
+            SelectObject(hdc, hRegFont);
+            SetTextColor(hdc, RGB(28, 30, 38));
+            RECT rcClock = { rc.right - 100, 0, rc.right - 8, rc.bottom - 1 };
+            DrawTextW(hdc, szClock, -1, &rcClock, DT_RIGHT | DT_VCENTER | DT_SINGLELINE);
+
+            SelectObject(hdc, hOldFont);
+            SelectObject(hdc, hOldBr);
+            SelectObject(hdc, hOldPen);
+            DeleteObject(hIconPen);
+            DeleteObject(hIconBoldPen);
+            DeleteObject(hDarkBr);
+            DeleteObject(hBoldFont);
+            DeleteObject(hRegFont);
+
+            EndPaint(hwnd, &ps);
+            return 0;
+        }
+    }
+    return DefWindowProcW(hwnd, uMsg, wParam, lParam);
+}
+
+static HWND EnsureKilsesiMenuBarCreated(HWND hwndParent, int cx, int cy)
+{
+    if (!g_hKilsesiMenuBar || !IsWindow(g_hKilsesiMenuBar))
+    {
+        WNDCLASSEXW wc = { sizeof(wc) };
+        wc.style = CS_HREDRAW | CS_VREDRAW;
+        wc.lpfnWndProc = KilsesiMenuBarWndProc;
+        wc.hInstance = hExplorerInstance;
+        wc.hCursor = LoadCursorW(NULL, IDC_ARROW);
+        wc.hbrBackground = NULL;
+        wc.lpszClassName = L"KilsesiMenuBarClass";
+        RegisterClassExW(&wc);
+
+        g_hKilsesiMenuBar = CreateWindowExW(
+            0,
+            L"KilsesiMenuBarClass",
+            L"",
+            WS_CHILD | WS_VISIBLE | WS_CLIPSIBLINGS,
+            0, 0, cx, cy,
+            hwndParent,
+            NULL,
+            hExplorerInstance,
+            NULL);
+    }
+    else
+    {
+        SetWindowPos(g_hKilsesiMenuBar, HWND_TOP, 0, 0, cx, cy, SWP_NOACTIVATE | SWP_SHOWWINDOW);
+    }
+    return g_hKilsesiMenuBar;
 }
 
 struct WINDOWPOSBACKUPDATA
@@ -1637,14 +2021,6 @@ GetPrimaryRect:
 
         *pRect = *pScreen;
 
-        if(!m_Theme)
-        {
-            /* Move the border outside of the screen */
-            InflateRect(pRect,
-                        GetSystemMetrics(SM_CXEDGE),
-                        GetSystemMetrics(SM_CYEDGE));
-        }
-
         MakeTrayRectWithSize(Position, pTraySize, pRect);
     }
 
@@ -2092,8 +2468,10 @@ ChangePos:
         if (WndSize.cy < g_TaskbarSettings.sr.Size.cy)
             WndSize.cy = g_TaskbarSettings.sr.Size.cy;
 
-        /* Save the calculated size */
+        /* Save the calculated size (26px macOS / Adwaita Top Menu Bar) */
+        WndSize.cy = 26;
         m_TraySize = WndSize;
+        m_Position = ABE_TOP;
 
         /* Calculate all docking rectangles. We need to do this here so they're
            initialized and dragging the tray window to another position gives
@@ -2104,7 +2482,6 @@ ChangePos:
                                       &rcScreen,
                                       &m_TraySize,
                                       &m_TrayRects[Pos]);
-            // TRACE("m_TrayRects[%d(%d)]: %d,%d,%d,%d\n", Pos, Position, m_TrayRects[Pos].left, m_TrayRects[Pos].top, m_TrayRects[Pos].right, m_TrayRects[Pos].bottom);
         }
 
         /* Determine which monitor we are on. It shouldn't matter which docked
@@ -2115,10 +2492,6 @@ ChangePos:
     VOID AlignControls(IN PRECT prcClient OPTIONAL)
     {
         RECT rcClient;
-        SIZE TraySize, StartSize;
-        POINT ptTrayNotify = { 0, 0 };
-        BOOL Horizontal;
-        HDWP dwp;
 
         m_StartButton.UpdateSize();
         if (prcClient != NULL)
@@ -2134,168 +2507,36 @@ ChangePos:
             }
         }
 
-        Horizontal = IsPosHorizontal();
-
-        /* We're about to resize/move the start button, the rebar control and
-           the tray notification control */
-        dwp = BeginDeferWindowPos(4);
-        if (dwp == NULL)
-        {
-            ERR("BeginDeferWindowPos failed. lastErr=%d\n", GetLastError());
-            return;
-        }
-
-        /* Limit the Start button width to the client width, if necessary */
-        StartSize = m_StartButton.GetSize();
-        if (StartSize.cx > rcClient.right)
-            StartSize.cx = rcClient.right;
-
-        HWND hwndTaskToolbar = ::GetWindow(m_TaskSwitch, GW_CHILD);
-        if (hwndTaskToolbar)
-        {
-            DWORD size = SendMessageW(hwndTaskToolbar, TB_GETBUTTONSIZE, 0, 0);
-
-            /* Themed button covers Edge area as well */
-            StartSize.cy = HIWORD(size) + (m_Theme ? GetSystemMetrics(SM_CYEDGE) : 0);
-        }
-
+        /* Position m_StartButton at (0,0,36,26) for PopupStartMenu() anchor, but keep classic 3D controls hidden */
         if (m_StartButton.m_hWnd != NULL)
         {
-            /* Resize and reposition the button */
-            dwp = m_StartButton.DeferWindowPos(dwp,
-                                               NULL,
-                                               0,
-                                               0,
-                                               StartSize.cx,
-                                               StartSize.cy,
-                                               SWP_NOZORDER | SWP_NOACTIVATE);
-            if (dwp == NULL)
-            {
-                ERR("DeferWindowPos for start button failed. lastErr=%d\n", GetLastError());
-                return;
-            }
+            ::SetWindowPos(m_StartButton.m_hWnd, NULL, 0, 0, 36, 26,
+                           SWP_NOZORDER | SWP_NOACTIVATE | SWP_HIDEWINDOW);
         }
-
-        /* Determine the size that the tray notification window needs */
-        if (Horizontal)
+        if (m_TrayNotify != NULL)
         {
-            TraySize.cx = 0;
-            TraySize.cy = rcClient.bottom;
+            ::ShowWindow(m_TrayNotify, SW_HIDE);
         }
-        else
-        {
-            TraySize.cx = rcClient.right;
-            TraySize.cy = 0;
-        }
-
-        if (m_TrayNotify != NULL &&
-            SendMessage(m_TrayNotify,
-                        TNWM_GETMINIMUMSIZE,
-                        (WPARAM)Horizontal,
-                        (LPARAM)&TraySize))
-        {
-            /* Move the tray notification window to the desired location */
-            if (Horizontal)
-                ptTrayNotify.x = rcClient.right - TraySize.cx;
-            else
-                ptTrayNotify.y = rcClient.bottom - TraySize.cy;
-
-            dwp = ::DeferWindowPos(dwp,
-                                   m_TrayNotify,
-                                   NULL,
-                                   ptTrayNotify.x,
-                                   ptTrayNotify.y,
-                                   TraySize.cx,
-                                   TraySize.cy,
-                                   SWP_NOZORDER | SWP_NOACTIVATE);
-            if (dwp == NULL)
-            {
-                ERR("DeferWindowPos for notification area failed. lastErr=%d\n", GetLastError());
-                return;
-            }
-        }
-
-        /* Resize/Move the rebar control */
         if (m_Rebar != NULL)
         {
-            POINT ptRebar = { 0, 0 };
-            SIZE szRebar;
-
-            SetWindowStyle(m_Rebar, CCS_VERT, Horizontal ? 0 : CCS_VERT);
-
-            if (Horizontal)
-            {
-                ptRebar.x = StartSize.cx + GetSystemMetrics(SM_CXSIZEFRAME);
-                szRebar.cx = ptTrayNotify.x - ptRebar.x;
-                szRebar.cy = rcClient.bottom;
-            }
-            else
-            {
-                ptRebar.y = StartSize.cy + GetSystemMetrics(SM_CYSIZEFRAME);
-                szRebar.cx = rcClient.right;
-                szRebar.cy = ptTrayNotify.y - ptRebar.y;
-            }
-
-            dwp = ::DeferWindowPos(dwp,
-                                   m_Rebar,
-                                   NULL,
-                                   ptRebar.x,
-                                   ptRebar.y,
-                                   szRebar.cx,
-                                   szRebar.cy,
-                                   SWP_NOZORDER | SWP_NOACTIVATE);
+            ::ShowWindow(m_Rebar, SW_HIDE);
         }
-
-        if (dwp != NULL)
-            EndDeferWindowPos(dwp);
-
         if (m_TaskSwitch != NULL)
         {
-            /* Update the task switch window configuration */
-            SendMessage(m_TaskSwitch, TSWM_UPDATETASKBARPOS, 0, 0);
+            ::ShowWindow(m_TaskSwitch, SW_HIDE);
         }
+
+        /* Create and size the full-width flat macOS / Adwaita Menu Bar */
+        EnsureKilsesiMenuBarCreated(m_hWnd, rcClient.right - rcClient.left, rcClient.bottom - rcClient.top);
     }
 
     void FitToRebar(PRECT pRect)
     {
-        /* Get the rect of the rebar */
-        RECT rebarRect, taskbarRect, clientRect;
-        ::GetWindowRect(m_Rebar, &rebarRect);
-        ::GetWindowRect(m_hWnd, &taskbarRect);
-        ::GetClientRect(m_hWnd, &clientRect);
-        OffsetRect(&rebarRect, -taskbarRect.left, -taskbarRect.top);
-
-        /* Calculate the difference of size of the taskbar and the rebar */
-        SIZE margins;
-        margins.cx = taskbarRect.right - taskbarRect.left - clientRect.right + clientRect.left;
-        margins.cy = taskbarRect.bottom - taskbarRect.top - clientRect.bottom + clientRect.top;
-
-        /* Calculate the new size of the rebar and make it resize, then change the new taskbar size */
-        switch (m_Position)
-        {
-        case ABE_TOP:
-            rebarRect.bottom = rebarRect.top + pRect->bottom - pRect->top - margins.cy;
-            ::SendMessageW(m_Rebar, RB_SIZETORECT, RBSTR_CHANGERECT,  (LPARAM)&rebarRect);
-            pRect->bottom = pRect->top + rebarRect.bottom - rebarRect.top + margins.cy;
-            break;
-        case ABE_BOTTOM:
-            rebarRect.top = rebarRect.bottom - (pRect->bottom - pRect->top - margins.cy);
-            ::SendMessageW(m_Rebar, RB_SIZETORECT, RBSTR_CHANGERECT,  (LPARAM)&rebarRect);
-            pRect->top = pRect->bottom - (rebarRect.bottom - rebarRect.top + margins.cy);
-            break;
-        case ABE_LEFT:
-            rebarRect.right = rebarRect.left + (pRect->right - pRect->left - margins.cx);
-            ::SendMessageW(m_Rebar, RB_SIZETORECT, RBSTR_CHANGERECT,  (LPARAM)&rebarRect);
-            pRect->right = pRect->left + (rebarRect.right - rebarRect.left + margins.cx);
-            break;
-        case ABE_RIGHT:
-            rebarRect.left = rebarRect.right - (pRect->right - pRect->left - margins.cx);
-            ::SendMessageW(m_Rebar, RB_SIZETORECT, RBSTR_CHANGERECT,  (LPARAM)&rebarRect);
-            pRect->left = pRect->right - (rebarRect.right - rebarRect.left + margins.cx);
-            break;
-        }
-
+        pRect->top = 0;
+        pRect->bottom = 26;
         CalculateValidSize(m_Position, pRect);
+        pRect->top = 0;
+        pRect->bottom = 26;
     }
 
     void PopupStartMenu()
@@ -2572,15 +2813,8 @@ ChangePos:
             return S_OK;
         }
 
-        DWORD dwExStyle = WS_EX_TOOLWINDOW | WS_EX_WINDOWEDGE;
-        if (g_TaskbarSettings.sr.AlwaysOnTop)
-            dwExStyle |= WS_EX_TOPMOST;
-
+        DWORD dwExStyle = WS_EX_TOOLWINDOW | WS_EX_TOPMOST;
         DWORD dwStyle = WS_POPUP | WS_VISIBLE | WS_CLIPSIBLINGS | WS_CLIPCHILDREN;
-        if(!m_Theme)
-        {
-            dwStyle |= WS_THICKFRAME | WS_BORDER;
-        }
 
         ZeroMemory(&rcWnd, sizeof(rcWnd));
         if (m_Position != (DWORD) -1)
@@ -2911,14 +3145,7 @@ ChangePos:
 
         m_Theme = OpenThemeData(m_hWnd, L"TaskBar");
 
-        if (m_Theme)
-        {
-            SetWindowStyle(m_hWnd, WS_THICKFRAME | WS_BORDER, 0);
-        }
-        else
-        {
-            SetWindowStyle(m_hWnd, WS_THICKFRAME | WS_BORDER, WS_THICKFRAME | WS_BORDER);
-        }
+        SetWindowStyle(m_hWnd, WS_THICKFRAME | WS_BORDER, 0);
         SetWindowPos(NULL, 0, 0, 0, 0, SWP_FRAMECHANGED | SWP_NOACTIVATE | SWP_NOMOVE | SWP_NOSIZE | SWP_NOZORDER | SWP_NOOWNERZORDER);
 
         return TRUE;

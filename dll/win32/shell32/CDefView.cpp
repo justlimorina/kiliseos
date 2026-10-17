@@ -950,10 +950,10 @@ void CDefView::UpdateListColors()
                      L"ListviewShadow", NULL, &bDropShadow, &cbDropShadow);
         if (bDropShadow)
         {
-            /* Set the icon background transparent */
+            /* Set the icon background transparent with crisp antialiased white text */
             m_ListView.SetTextBkColor(CLR_NONE);
             m_ListView.SetTextColor(RGB(255, 255, 255));
-            m_ListView.SetExtendedListViewStyle(LVS_EX_TRANSPARENTSHADOWTEXT, LVS_EX_TRANSPARENTSHADOWTEXT);
+            m_ListView.SetExtendedListViewStyle(0, LVS_EX_TRANSPARENTSHADOWTEXT);
         }
         else
         {

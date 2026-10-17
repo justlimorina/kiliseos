@@ -4941,7 +4941,7 @@ IntGetRealGlyph(
     if (realglyph)
         return realglyph;
 
-    error = FT_Load_Glyph(Cache->Hashed.Face, Cache->Hashed.GlyphIndex, FT_LOAD_DEFAULT);
+    error = FT_Load_Glyph(Cache->Hashed.Face, Cache->Hashed.GlyphIndex, FT_LOAD_DEFAULT | FT_LOAD_NO_BITMAP);
     if (error)
     {
         DPRINT1("WARNING: Failed to load and render glyph! [index: %d]\n", Cache->Hashed.GlyphIndex);

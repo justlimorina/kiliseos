@@ -445,33 +445,13 @@ static BOOL IntDrawRectEdge(HDC hdc, LPRECT rc, UINT uType, UINT uFlags, UINT wi
         LTInnerI = RBInnerI = LTRBInnerMono[uType & (BDR_INNER|BDR_OUTER)];
         LTOuterI = RBOuterI = LTRBOuterMono[uType & (BDR_INNER|BDR_OUTER)];
     }
-    else if(uFlags & BF_FLAT)
-    {
-        LTInnerI = RBInnerI = LTRBInnerFlat[uType & (BDR_INNER|BDR_OUTER)];
-        LTOuterI = RBOuterI = LTRBOuterFlat[uType & (BDR_INNER|BDR_OUTER)];
-
-        /* Bertho Stultiens states above that this function exactly matches win95
-         * In win98 BF_FLAT rectangles have an inner border same color as the
-        * middle (COLOR_BTNFACE). I believe it's the same for win95 but since
-        * I don't know I go with Bertho and just sets it for win98 until proven
-        * otherwise.
-        *                                          Dennis Björklund, 10 June, 99
-        */
-	if( LTInnerI != -1 ) LTInnerI = RBInnerI = COLOR_BTNFACE;
-    }
-    else if(uFlags & BF_SOFT)
-    {
-        LTInnerI = LTInnerSoft[uType & (BDR_INNER|BDR_OUTER)];
-        LTOuterI = LTOuterSoft[uType & (BDR_INNER|BDR_OUTER)];
-        RBInnerI = RBInnerSoft[uType & (BDR_INNER|BDR_OUTER)];
-        RBOuterI = RBOuterSoft[uType & (BDR_INNER|BDR_OUTER)];
-    }
     else
     {
-        LTInnerI = LTInnerNormal[uType & (BDR_INNER|BDR_OUTER)];
-        LTOuterI = LTOuterNormal[uType & (BDR_INNER|BDR_OUTER)];
-        RBInnerI = RBInnerNormal[uType & (BDR_INNER|BDR_OUTER)];
-        RBOuterI = RBOuterNormal[uType & (BDR_INNER|BDR_OUTER)];
+        /* kilsesiOS Adwaita/macOS UI: Flatten 1995-era 3D bevels into clean 1px flat borders */
+        LTInnerI = RBInnerI = LTRBInnerFlat[uType & (BDR_INNER|BDR_OUTER)];
+        LTOuterI = RBOuterI = LTRBOuterFlat[uType & (BDR_INNER|BDR_OUTER)];
+        if (LTInnerI != -1)
+            LTInnerI = RBInnerI = COLOR_BTNFACE;
     }
 
     if((uFlags & BF_BOTTOMLEFT) == BF_BOTTOMLEFT)   lbi_offset = width;

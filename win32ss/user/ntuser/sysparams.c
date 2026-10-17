@@ -303,7 +303,7 @@ SpiUpdatePerUserSystemParameters(VOID)
     gspv.dwUserPrefMask = SpiLoadUserPrefMask(UPM_DEFAULT);
     gspv.bMouseClickLock = (gspv.dwUserPrefMask & UPM_CLICKLOCK) != 0;
     gspv.bMouseCursorShadow = (gspv.dwUserPrefMask & UPM_CURSORSHADOW) != 0;
-    gspv.bFontSmoothing = SpiLoadInt(KEY_DESKTOP, VAL_FONTSMOOTHING, 0) == 2;
+    gspv.bFontSmoothing = SpiLoadInt(KEY_DESKTOP, VAL_FONTSMOOTHING, 2) == 2;
     gspv.uiFontSmoothingType = SpiLoadDWord(KEY_DESKTOP, VAL_FONTSMOOTHINGTYPE, 1);
     gspv.uiFontSmoothingContrast = SpiLoadDWord(KEY_DESKTOP, VAL_FONTSMOOTHINGCONTRAST, 1400);
     gspv.uiFontSmoothingOrientation = SpiLoadDWord(KEY_DESKTOP, VAL_FONTSMOOTHINGORIENTATION, 1);
