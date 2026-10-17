@@ -68,13 +68,13 @@ static LRESULT CALLBACK KilsesiAboutWndProc(HWND hwnd, UINT uMsg, WPARAM wParam,
                                           DEFAULT_QUALITY, DEFAULT_PITCH | FF_SWISS, L"Tahoma");
 
             HWND hChk1 = CreateWindowExW(0, L"BUTTON",
-                L"Win10/11 API Sets (api-ms-win-*) & NT 10.0.19045",
+                L"Win10/11 API Sets (api-ms-win-*) && NT 10.0.19045",
                 WS_CHILD | WS_VISIBLE | BS_AUTOCHECKBOX,
-                136, 138, 276, 18, hwnd, (HMENU)201, hExplorerInstance, NULL);
+                136, 138, 282, 18, hwnd, (HMENU)201, hExplorerInstance, NULL);
             HWND hChk2 = CreateWindowExW(0, L"BUTTON",
-                L"Wine DirectX 11/12, Direct2D & DirectWrite Layer",
+                L"Wine DirectX 11/12, Direct2D && DirectWrite Layer",
                 WS_CHILD | WS_VISIBLE | BS_AUTOCHECKBOX,
-                136, 158, 276, 18, hwnd, (HMENU)202, hExplorerInstance, NULL);
+                136, 158, 282, 18, hwnd, (HMENU)202, hExplorerInstance, NULL);
 
             SendMessageW(hChk1, BM_SETCHECK, BST_CHECKED, 0);
             SendMessageW(hChk2, BM_SETCHECK, BST_CHECKED, 0);
@@ -185,7 +185,7 @@ static LRESULT CALLBACK KilsesiAboutWndProc(HWND hwnd, UINT uMsg, WPARAM wParam,
             RECT rcSpec2 = { 136, 90, rc.right - 16, 108 };
             DrawTextW(hdc, L"Graphics:   Aqua Quartz-GDI + Wine D3D10/11/12", -1, &rcSpec2, DT_LEFT | DT_SINGLELINE);
             RECT rcSpec3 = { 136, 108, rc.right - 16, 126 };
-            DrawTextW(hdc, L"Controls:   Native Rounded Aqua Buttons & Checks", -1, &rcSpec3, DT_LEFT | DT_SINGLELINE);
+            DrawTextW(hdc, L"Controls:   Native Rounded Aqua Buttons && Checks", -1, &rcSpec3, DT_LEFT | DT_SINGLELINE);
 
             SelectObject(hdc, hOldFont);
             DeleteObject(hTitleFont);
