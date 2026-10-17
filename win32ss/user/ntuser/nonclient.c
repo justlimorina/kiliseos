@@ -818,6 +818,7 @@ VOID
 UserDrawCaptionButton(PWND pWnd, LPRECT Rect, DWORD Style, DWORD ExStyle, HDC hDC, BOOL bDown, ULONG Type)
 {
    RECT TempRect;
+   LONG cxSize, cySize;
 
    if (!(Style & WS_SYSMENU))
    {
@@ -825,24 +826,37 @@ UserDrawCaptionButton(PWND pWnd, LPRECT Rect, DWORD Style, DWORD ExStyle, HDC hD
    }
 
    TempRect = *Rect;
+   cxSize = (ExStyle & WS_EX_TOOLWINDOW) ? UserGetSystemMetrics(SM_CXSMSIZE) : UserGetSystemMetrics(SM_CXSIZE);
+   cySize = (ExStyle & WS_EX_TOOLWINDOW) ? UserGetSystemMetrics(SM_CYSMSIZE) : UserGetSystemMetrics(SM_CYSIZE);
 
    switch (Type)
    {
+      case DFCS_CAPTIONCLOSE:
+      {
+         PMENU pSysMenu = IntGetSystemMenu(pWnd, FALSE);
+         UINT MenuState = IntGetMenuState(pSysMenu ? UserHMGetHandle(pSysMenu) : NULL, SC_CLOSE, MF_BYCOMMAND);
+
+         /* Leftmost macOS Traffic Light: Red Close Button */
+         TempRect.left = Rect->left + 4;
+         TempRect.right = TempRect.left + cxSize - 2;
+         TempRect.top += 2;
+         TempRect.bottom = TempRect.top + cySize - 4;
+
+         DrawFrameControl(hDC, &TempRect, DFC_CAPTION,
+                          (DFCS_CAPTIONCLOSE | (bDown ? DFCS_PUSHED : 0) |
+                          ((!(MenuState & (MF_GRAYED|MF_DISABLED)) && !(pWnd->pcls->style & CS_NOCLOSE)) ? 0 : DFCS_INACTIVE)));
+         break;
+      }
       case DFCS_CAPTIONMIN:
       {
          if (ExStyle & WS_EX_TOOLWINDOW)
             return; /* ToolWindows don't have min/max buttons */
 
-         if (Style & WS_SYSMENU)
-             TempRect.right -= UserGetSystemMetrics(SM_CXSIZE) + 1;
-
-         if (Style & (WS_MAXIMIZEBOX | WS_MINIMIZEBOX))
-             TempRect.right -= UserGetSystemMetrics(SM_CXSIZE) - 2;
-
-         TempRect.left = TempRect.right - UserGetSystemMetrics(SM_CXSIZE) + 1;
-         TempRect.bottom = TempRect.top + UserGetSystemMetrics(SM_CYSIZE) - 2;
+         /* Second macOS Traffic Light: Yellow Minimize Button */
+         TempRect.left = Rect->left + 4 + cxSize;
+         TempRect.right = TempRect.left + cxSize - 2;
          TempRect.top += 2;
-         TempRect.right -= 1;
+         TempRect.bottom = TempRect.top + cySize - 4;
 
          DrawFrameControl(hDC, &TempRect, DFC_CAPTION,
                           ((Style & WS_MINIMIZE) ? DFCS_CAPTIONRESTORE : DFCS_CAPTIONMIN) |
@@ -855,42 +869,16 @@ UserDrawCaptionButton(PWND pWnd, LPRECT Rect, DWORD Style, DWORD ExStyle, HDC hD
          if (ExStyle & WS_EX_TOOLWINDOW)
              return; /* ToolWindows don't have min/max buttons */
 
-         if (Style & WS_SYSMENU)
-             TempRect.right -= UserGetSystemMetrics(SM_CXSIZE) + 1;
-
-         TempRect.left = TempRect.right - UserGetSystemMetrics(SM_CXSIZE) + 1;
-         TempRect.bottom = TempRect.top + UserGetSystemMetrics(SM_CYSIZE) - 2;
+         /* Third macOS Traffic Light: Green Maximize/Zoom Button */
+         TempRect.left = Rect->left + 4 + cxSize * 2;
+         TempRect.right = TempRect.left + cxSize - 2;
          TempRect.top += 2;
-         TempRect.right -= 1;
+         TempRect.bottom = TempRect.top + cySize - 4;
 
          DrawFrameControl(hDC, &TempRect, DFC_CAPTION,
                           ((Style & WS_MAXIMIZE) ? DFCS_CAPTIONRESTORE : DFCS_CAPTIONMAX) |
                           (bDown ? DFCS_PUSHED : 0) |
                           ((Style & WS_MAXIMIZEBOX) ? 0 : DFCS_INACTIVE));
-         break;
-      }
-      case DFCS_CAPTIONCLOSE:
-      {
-          PMENU pSysMenu = IntGetSystemMenu(pWnd, FALSE);
-          UINT MenuState = IntGetMenuState(pSysMenu ? UserHMGetHandle(pSysMenu) : NULL, SC_CLOSE, MF_BYCOMMAND); /* in case of error MenuState==0xFFFFFFFF */
-
-         /* A tool window has a smaller Close button */
-         if (ExStyle & WS_EX_TOOLWINDOW)
-         {
-            TempRect.left = TempRect.right - UserGetSystemMetrics(SM_CXSMSIZE);
-            TempRect.bottom = TempRect.top + UserGetSystemMetrics(SM_CYSMSIZE) - 2;
-         }
-         else
-         {
-            TempRect.left = TempRect.right - UserGetSystemMetrics(SM_CXSIZE);
-            TempRect.bottom = TempRect.top + UserGetSystemMetrics(SM_CYSIZE) - 2;
-         }
-         TempRect.top += 2;
-         TempRect.right -= 2;
-
-         DrawFrameControl(hDC, &TempRect, DFC_CAPTION,
-                          (DFCS_CAPTIONCLOSE | (bDown ? DFCS_PUSHED : 0) |
-                          ((!(MenuState & (MF_GRAYED|MF_DISABLED)) && !(pWnd->pcls->style & CS_NOCLOSE)) ? 0 : DFCS_INACTIVE)));
          break;
       }
    }
@@ -2079,68 +2067,31 @@ GetNCHitEx(PWND pWnd, POINT pt)
         if (!RECTL_bPointInRect( &rcWindow, pt.x, pt.y ))
         {
             BOOL min_or_max_box = (Style & WS_SYSMENU) && (Style & (WS_MINIMIZEBOX|WS_MAXIMIZEBOX));
-            if (ExStyle & WS_EX_LAYOUTRTL)
+            LONG cxSize = (ExStyle & WS_EX_TOOLWINDOW) ? UserGetSystemMetrics(SM_CXSMSIZE) : UserGetSystemMetrics(SM_CXSIZE);
+
+            /* macOS Traffic Light Buttons on the left: Close (Red), Minimize (Yellow), Maximize (Green) */
+            if (Style & WS_SYSMENU)
             {
-                /* Check system menu */
-                if ((Style & WS_SYSMENU) && !(ExStyle & WS_EX_TOOLWINDOW) && NC_IconForWindow(pWnd))
-                {
-                    rcWindow.right -= UserGetSystemMetrics(SM_CYCAPTION) - 1;
-                    if (pt.x > rcWindow.right) return HTSYSMENU;
-                }
-
-                /* Check close button */
-                if (Style & WS_SYSMENU)
-                {
-                    rcWindow.left += UserGetSystemMetrics(SM_CYCAPTION);
-                    if (pt.x < rcWindow.left) return HTCLOSE;
-                }
-
-                /* Check maximize box */
-                /* In Win95 there is automatically a Maximize button when there is a minimize one */
-                if (min_or_max_box && !(ExStyle & WS_EX_TOOLWINDOW))
-                {
-                    rcWindow.left += UserGetSystemMetrics(SM_CXSIZE);
-                    if (pt.x < rcWindow.left) return HTMAXBUTTON;
-                }
-
-                /* Check minimize box */
-                if (min_or_max_box && !(ExStyle & WS_EX_TOOLWINDOW))
-                {
-                    rcWindow.left += UserGetSystemMetrics(SM_CXSIZE);
-                    if (pt.x < rcWindow.left) return HTMINBUTTON;
-                }
+                rcWindow.left += cxSize + 4;
+                if (pt.x < rcWindow.left) return HTCLOSE;
             }
-            else
+
+            if (min_or_max_box && !(ExStyle & WS_EX_TOOLWINDOW))
             {
-                /* Check system menu */
-                if ((Style & WS_SYSMENU) && !(ExStyle & WS_EX_TOOLWINDOW) && NC_IconForWindow(pWnd))
-                {
-                    rcWindow.left += UserGetSystemMetrics(SM_CYCAPTION) - 1;
-                    if (pt.x < rcWindow.left) return HTSYSMENU;
-                }
+                rcWindow.left += cxSize;
+                if (pt.x < rcWindow.left) return HTMINBUTTON;
 
-                /* Check close button */
-                if (Style & WS_SYSMENU)
-                {
-                    rcWindow.right -= UserGetSystemMetrics(SM_CYCAPTION);
-                    if (pt.x > rcWindow.right) return HTCLOSE;
-                }
-
-                /* Check maximize box */
-                /* In Win95 there is automatically a Maximize button when there is a minimize one */
-                if (min_or_max_box && !(ExStyle & WS_EX_TOOLWINDOW))
-                {
-                    rcWindow.right -= UserGetSystemMetrics(SM_CXSIZE);
-                    if (pt.x > rcWindow.right) return HTMAXBUTTON;
-                }
-
-                /* Check minimize box */
-                if (min_or_max_box && !(ExStyle & WS_EX_TOOLWINDOW))
-                {
-                    rcWindow.right -= UserGetSystemMetrics(SM_CXSIZE);
-                    if (pt.x > rcWindow.right) return HTMINBUTTON;
-                }
+                rcWindow.left += cxSize;
+                if (pt.x < rcWindow.left) return HTMAXBUTTON;
             }
+
+            /* System menu icon on the right */
+            if ((Style & WS_SYSMENU) && !(ExStyle & WS_EX_TOOLWINDOW) && NC_IconForWindow(pWnd))
+            {
+                rcWindow.right -= UserGetSystemMetrics(SM_CYCAPTION) - 1;
+                if (pt.x > rcWindow.right) return HTSYSMENU;
+            }
+
             return HTCAPTION;
         }
     }

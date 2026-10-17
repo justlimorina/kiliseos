@@ -2133,18 +2133,21 @@ UserDrawCaptionText(
       OldTextColor = IntGdiSetTextColor(hDc, IntGetSysColor(COLOR_BTNTEXT));
    else
       OldTextColor = IntGdiSetTextColor(hDc,
-                                        IntGetSysColor(uFlags & DC_ACTIVE ? COLOR_CAPTIONTEXT : COLOR_INACTIVECAPTIONTEXT));
+                                        (uFlags & DC_ACTIVE) ? RGB(28, 28, 32) : RGB(130, 130, 140));
 
-   // Adjust for system menu.
-   if (pWnd && pWnd->style & WS_SYSMENU)
+   /* Reserve space on the left for macOS Traffic Light buttons and on the right for window icon */
+   if (pWnd && (pWnd->style & WS_SYSMENU) && !(uFlags & DC_INBUTTON))
    {
-      r.right -= UserGetSystemMetrics(SM_CYCAPTION) - 1;
+      r.left += UserGetSystemMetrics(SM_CXSIZE) + 6;
       if ((pWnd->style & (WS_MAXIMIZEBOX | WS_MINIMIZEBOX)) && !(pWnd->ExStyle & WS_EX_TOOLWINDOW))
       {
-         r.right -= UserGetSystemMetrics(SM_CXSIZE) + 1;
-         r.right -= UserGetSystemMetrics(SM_CXSIZE) + 1;
+         r.left += UserGetSystemMetrics(SM_CXSIZE) * 2;
       }
+      r.right -= UserGetSystemMetrics(SM_CYCAPTION);
    }
+
+   if (r.right < r.left)
+      r.right = r.left;
 
    GreGetTextExtentExW(hDc, Text->Buffer, Text->Length/sizeof(WCHAR), r.right - r.left, &fit, 0, &Size, 0);
 
@@ -2156,14 +2159,16 @@ UserDrawCaptionText(
    }
 
    if (Ret)
-   {  // Faster while in setup.
+   {
+      /* Center the title text horizontally like macOS */
+      LONG xPos = r.left + ((r.right - r.left) > Size.cx ? (r.right - r.left - Size.cx) / 2 : 0);
       UserExtTextOutW( hDc,
-                      lpRc->left,
-                      lpRc->top + (lpRc->bottom - lpRc->top - Size.cy) / 2, // DT_SINGLELINE && DT_VCENTER
-                      ETO_CLIPPED,
-                     (RECTL *)lpRc,
-                      Text->Buffer,
-                      Length);
+                       xPos,
+                       lpRc->top + (lpRc->bottom - lpRc->top - Size.cy) / 2,
+                       ETO_CLIPPED,
+                      (RECTL *)&r,
+                       Text->Buffer,
+                       Length);
    }
    else
    {
@@ -2171,7 +2176,7 @@ UserDrawCaptionText(
                  Text->Buffer,
                  Text->Length/sizeof(WCHAR),
                 (RECTL *)&r,
-                 DT_END_ELLIPSIS|DT_SINGLELINE|DT_VCENTER|DT_NOPREFIX|DT_LEFT);
+                 DT_END_ELLIPSIS|DT_SINGLELINE|DT_VCENTER|DT_NOPREFIX|DT_CENTER);
    }
 
    IntGdiSetTextColor(hDc, OldTextColor);
@@ -2213,18 +2218,15 @@ BOOL UserDrawCaption(
    else
      HasIcon = (hIcon != NULL);
 
-   // Draw the caption background
-   if((uFlags & DC_GRADIENT) && !(uFlags & DC_INBUTTON))
+   /* Draw the macOS silver/white vertical gradient caption background */
+   if (!(uFlags & DC_INBUTTON))
    {
       static GRADIENT_RECT gcap = {0, 1};
       TRIVERTEX Vertices[2];
       COLORREF Colors[2];
 
-      Colors[0] = IntGetSysColor((uFlags & DC_ACTIVE) ?
-            COLOR_ACTIVECAPTION : COLOR_INACTIVECAPTION);
-
-      Colors[1] = IntGetSysColor((uFlags & DC_ACTIVE) ?
-            COLOR_GRADIENTACTIVECAPTION : COLOR_GRADIENTINACTIVECAPTION);
+      Colors[0] = (uFlags & DC_ACTIVE) ? RGB(246, 246, 250) : RGB(240, 240, 244);
+      Colors[1] = (uFlags & DC_ACTIVE) ? RGB(220, 221, 228) : RGB(230, 230, 236);
 
       Vertices[0].x = Rect.left;
       Vertices[0].y = Rect.top;
@@ -2240,7 +2242,7 @@ BOOL UserDrawCaption(
       Vertices[1].Blue = (WORD)(Colors[1]>>8) & 0xFF00;
       Vertices[1].Alpha = 0;
 
-      if(!GreGradientFill(hDc, Vertices, 2, &gcap, 1, GRADIENT_FILL_RECT_H))
+      if(!GreGradientFill(hDc, Vertices, 2, &gcap, 1, GRADIENT_FILL_RECT_V))
       {
          ERR("GreGradientFill() failed!\n");
          goto cleanup;
@@ -2273,7 +2275,7 @@ BOOL UserDrawCaption(
       }
    }
 
-   /* Draw icon */
+   /* Draw icon on the right side of the titlebar so left side has macOS traffic lights */
    if (HasIcon)
    {
       PCURICON_OBJECT pIcon = NULL;
@@ -2285,7 +2287,6 @@ BOOL UserDrawCaption(
       else if (pWnd)
       {
           pIcon = NC_IconForWindow(pWnd);
-          // FIXME: NC_IconForWindow should reference it for us */
           if (pIcon)
               UserReferenceObject(pIcon);
       }
@@ -2294,8 +2295,8 @@ BOOL UserDrawCaption(
       {
          LONG cx = UserGetSystemMetrics(SM_CXSMICON);
          LONG cy = UserGetSystemMetrics(SM_CYSMICON);
-         LONG x = Rect.left - cx/2 + 1 + (Rect.bottom - Rect.top)/2; // this is really what Window does
-         LONG y = (Rect.top + Rect.bottom - cy)/2; // center
+         LONG x = Rect.right - cx - 4;
+         LONG y = (Rect.top + Rect.bottom - cy)/2;
          UserDrawIconEx(hDc, x, y, pIcon, cx, cy, 0, NULL, DI_NORMAL);
          UserDereferenceObject(pIcon);
       }
@@ -2304,9 +2305,6 @@ BOOL UserDrawCaption(
           HasIcon = FALSE;
       }
    }
-
-   if (HasIcon)
-      Rect.left += Rect.bottom - Rect.top;
 
    if((uFlags & DC_TEXT))
    {

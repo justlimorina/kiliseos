@@ -14,3 +14,5 @@ modules/[Aa][Hh][Kk]_[Tt]ests
 .vs
 .vscode
 sdk/tools/winesync/winesync.cfg
+.rosbe
+

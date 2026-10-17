@@ -14,7 +14,7 @@ BOOL FASTCALL RegisterControlAtoms(VOID);
 
 PTHREADINFO gptiCurrent = NULL;
 PPROCESSINFO gppiInputProvider = NULL;
-BOOL g_AlwaysDisplayVersion = FALSE;
+BOOL g_AlwaysDisplayVersion = TRUE;
 ERESOURCE UserLock;
 ATOM AtomMessage;       // Window Message atom.
 ATOM AtomWndObj;        // Window Object atom.

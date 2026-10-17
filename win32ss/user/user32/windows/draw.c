@@ -808,62 +808,70 @@ static BOOL UITOOLS95_DrawFrameCaption(HDC dc, LPRECT r, UINT uFlags)
 {
     LOGFONTW lf;
     HFONT hFont, hOldFont;
-    COLORREF clrsave;
+    COLORREF clrsave, clrFill, clrBorder;
     RECT myr;
-    INT bkmode;
-    TCHAR Symbol;
+    INT bkmode, cxy;
+    TCHAR Center = TEXT('n'), OutRight = TEXT('j'), OutLeft = TEXT('k');
+
     switch(uFlags & 0xf)
     {
         case DFCS_CAPTIONCLOSE:
-		Symbol = 'r';
-		break;
-        case DFCS_CAPTIONHELP:
-		Symbol = 's';
-		break;
+            clrFill   = (uFlags & DFCS_PUSHED) ? RGB(210, 55, 50) : RGB(255, 95, 86);
+            clrBorder = RGB(224, 68, 62);
+            break;
         case DFCS_CAPTIONMIN:
-		Symbol = '0';
-		break;
+            clrFill   = (uFlags & DFCS_PUSHED) ? RGB(215, 150, 25) : RGB(255, 189, 46);
+            clrBorder = RGB(222, 161, 35);
+            break;
         case DFCS_CAPTIONMAX:
-		Symbol = '1';
-		break;
         case DFCS_CAPTIONRESTORE:
-		Symbol = '2';
-		break;
+            clrFill   = (uFlags & DFCS_PUSHED) ? RGB(25, 160, 45) : RGB(39, 201, 63);
+            clrBorder = RGB(26, 171, 41);
+            break;
+        case DFCS_CAPTIONHELP:
+            clrFill   = RGB(88, 86, 214);
+            clrBorder = RGB(68, 66, 184);
+            break;
         default:
-             ERR("Invalid caption; flags=0x%04x\n", uFlags);
-             return FALSE;
+            ERR("Invalid caption; flags=0x%04x\n", uFlags);
+            return FALSE;
     }
-    IntDrawRectEdge(dc,r,(uFlags&DFCS_PUSHED) ? EDGE_SUNKEN : EDGE_RAISED, BF_RECT | BF_MIDDLE | BF_SOFT, 1);
+
+    if (uFlags & DFCS_INACTIVE)
+    {
+        clrFill   = RGB(204, 204, 210);
+        clrBorder = RGB(175, 175, 182);
+    }
+
+    cxy = UITOOLS_MakeSquareRect(r, &myr);
+    if (cxy > 13)
+    {
+        INT shrink = (cxy - 13) / 2;
+        myr.left   += shrink;
+        myr.top    += shrink;
+        myr.right  -= shrink;
+        myr.bottom -= shrink;
+        cxy = myr.bottom - myr.top;
+    }
+
     ZeroMemory(&lf, sizeof(LOGFONTW));
-    UITOOLS_MakeSquareRect(r, &myr);
-    myr.left += 1;
-    myr.top += 1;
-    myr.right -= 1;
-    myr.bottom -= 1;
-    if(uFlags & DFCS_PUSHED)
-       OffsetRect(&myr,1,1);
-    lf.lfHeight = myr.bottom - myr.top;
+    lf.lfHeight = cxy;
     lf.lfWidth = 0;
     lf.lfWeight = FW_NORMAL;
     lf.lfCharSet = DEFAULT_CHARSET;
     lstrcpy(lf.lfFaceName, TEXT("Marlett"));
     hFont = CreateFontIndirect(&lf);
-    /* save font and text color */
     hOldFont = SelectObject(dc, hFont);
     clrsave = GetTextColor(dc);
     bkmode = GetBkMode(dc);
-    /* set color and drawing mode */
+
     SetBkMode(dc, TRANSPARENT);
-    if(uFlags & DFCS_INACTIVE)
-    {
-        /* draw shadow */
-        SetTextColor(dc, GetSysColor(COLOR_BTNHIGHLIGHT));
-        TextOut(dc, myr.left + 1, myr.top + 1, &Symbol, 1);
-    }
-    SetTextColor(dc, GetSysColor((uFlags & DFCS_INACTIVE) ? COLOR_BTNSHADOW : COLOR_BTNTEXT));
-    /* draw selected symbol */
-    TextOut(dc, myr.left, myr.top, &Symbol, 1);
-    /* restore previous settings */
+    SetTextColor(dc, clrFill);
+    TextOut(dc, myr.left, myr.top, &Center, 1);
+    SetTextColor(dc, clrBorder);
+    TextOut(dc, myr.left, myr.top, &OutRight, 1);
+    TextOut(dc, myr.left, myr.top, &OutLeft, 1);
+
     SetTextColor(dc, clrsave);
     SelectObject(dc, hOldFont);
     SetBkMode(dc, bkmode);

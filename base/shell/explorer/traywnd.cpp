@@ -48,6 +48,374 @@ HRESULT TrayWindowCtxMenuCreator(ITrayWindow * TrayWnd, IN HWND hWndOwner, ICont
 
 enum { NONE, TILED, CASCADED } g_Arrangement = NONE;
 
+static HWND g_hKilsesiAboutWnd = NULL;
+static HWND g_hKilsesiDockWnd  = NULL;
+
+static LRESULT CALLBACK KilsesiAboutWndProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
+{
+    switch (uMsg)
+    {
+        case WM_ERASEBKGND:
+            return 1;
+
+        case WM_PAINT:
+        {
+            PAINTSTRUCT ps;
+            HDC hdc = BeginPaint(hwnd, &ps);
+            RECT rc;
+            GetClientRect(hwnd, &rc);
+
+            /* macOS Light sheet background */
+            HBRUSH hBg = CreateSolidBrush(RGB(246, 246, 250));
+            FillRect(hdc, &rc, hBg);
+            DeleteObject(hBg);
+
+            /* Draw colorful macOS Sonoma emblem circle on the left */
+            HBRUSH hRing1 = CreateSolidBrush(RGB(34, 118, 226));
+            HPEN hPen1 = CreatePen(PS_SOLID, 2, RGB(24, 92, 190));
+            HGDIOBJ hOldBr = SelectObject(hdc, hRing1);
+            HGDIOBJ hOldPen = SelectObject(hdc, hPen1);
+            Ellipse(hdc, 28, 34, 116, 122);
+
+            HBRUSH hRing2 = CreateSolidBrush(RGB(138, 68, 186));
+            HPEN hPen2 = CreatePen(PS_SOLID, 2, RGB(255, 255, 255));
+            SelectObject(hdc, hRing2);
+            SelectObject(hdc, hPen2);
+            Ellipse(hdc, 44, 50, 100, 106);
+
+            HBRUSH hRing3 = CreateSolidBrush(RGB(48, 209, 88));
+            SelectObject(hdc, hRing3);
+            Ellipse(hdc, 60, 66, 84, 90);
+
+            SelectObject(hdc, hOldBr);
+            SelectObject(hdc, hOldPen);
+            DeleteObject(hRing1);
+            DeleteObject(hPen1);
+            DeleteObject(hRing2);
+            DeleteObject(hPen2);
+            DeleteObject(hRing3);
+
+            SetBkMode(hdc, TRANSPARENT);
+
+            /* Title: kilsesiOS Sonoma */
+            HFONT hTitleFont = CreateFontW(-20, 0, 0, 0, FW_BOLD, FALSE, FALSE, FALSE,
+                                           DEFAULT_CHARSET, OUT_DEFAULT_PRECIS, CLIP_DEFAULT_PRECIS,
+                                           DEFAULT_QUALITY, DEFAULT_PITCH | FF_SWISS, L"Tahoma");
+            HFONT hSubFont = CreateFontW(-12, 0, 0, 0, FW_BOLD, FALSE, FALSE, FALSE,
+                                         DEFAULT_CHARSET, OUT_DEFAULT_PRECIS, CLIP_DEFAULT_PRECIS,
+                                         DEFAULT_QUALITY, DEFAULT_PITCH | FF_SWISS, L"Tahoma");
+            HFONT hBodyFont = CreateFontW(-11, 0, 0, 0, FW_NORMAL, FALSE, FALSE, FALSE,
+                                          DEFAULT_CHARSET, OUT_DEFAULT_PRECIS, CLIP_DEFAULT_PRECIS,
+                                          DEFAULT_QUALITY, DEFAULT_PITCH | FF_SWISS, L"Tahoma");
+
+            HGDIOBJ hOldFont = SelectObject(hdc, hTitleFont);
+            SetTextColor(hdc, RGB(24, 24, 28));
+            RECT rcText = { 136, 26, rc.right - 16, 54 };
+            DrawTextW(hdc, L"kilsesiOS Sonoma", -1, &rcText, DT_LEFT | DT_SINGLELINE | DT_VCENTER);
+
+            SelectObject(hdc, hSubFont);
+            SetTextColor(hdc, RGB(0, 122, 255));
+            RECT rcSub = { 136, 52, rc.right - 16, 72 };
+            DrawTextW(hdc, L"Version 15.0 (macOS Edition)", -1, &rcSub, DT_LEFT | DT_SINGLELINE | DT_VCENTER);
+
+            SelectObject(hdc, hBodyFont);
+            SetTextColor(hdc, RGB(70, 70, 82));
+            RECT rcSpec1 = { 136, 78, rc.right - 16, 96 };
+            DrawTextW(hdc, L"Kernel:     Darwin / ReactOS NT 5.2 Hybrid", -1, &rcSpec1, DT_LEFT | DT_SINGLELINE);
+            RECT rcSpec2 = { 136, 96, rc.right - 16, 114 };
+            DrawTextW(hdc, L"Graphics:   Aqua Quartz-GDI Engine", -1, &rcSpec2, DT_LEFT | DT_SINGLELINE);
+            RECT rcSpec3 = { 136, 114, rc.right - 16, 132 };
+            DrawTextW(hdc, L"Shell:      macOS Menu Bar & Rounded Dock", -1, &rcSpec3, DT_LEFT | DT_SINGLELINE);
+
+            /* Draw two macOS-style rounded action buttons at the bottom */
+            HBRUSH hBtnBlue = CreateSolidBrush(RGB(0, 122, 255));
+            HPEN hBtnPen = CreatePen(PS_SOLID, 1, RGB(0, 100, 220));
+            SelectObject(hdc, hBtnBlue);
+            SelectObject(hdc, hBtnPen);
+            RoundRect(hdc, 136, 144, 250, 172, 10, 10);
+
+            SetTextColor(hdc, RGB(255, 255, 255));
+            SelectObject(hdc, hSubFont);
+            RECT rcBtn1 = { 136, 144, 250, 172 };
+            DrawTextW(hdc, L"Open Terminal", -1, &rcBtn1, DT_CENTER | DT_VCENTER | DT_SINGLELINE);
+
+            HBRUSH hBtnGray = CreateSolidBrush(RGB(228, 228, 236));
+            HPEN hBtnGrayPen = CreatePen(PS_SOLID, 1, RGB(195, 195, 206));
+            SelectObject(hdc, hBtnGray);
+            SelectObject(hdc, hBtnGrayPen);
+            RoundRect(hdc, 260, 144, 374, 172, 10, 10);
+
+            SetTextColor(hdc, RGB(32, 32, 40));
+            RECT rcBtn2 = { 260, 144, 374, 172 };
+            DrawTextW(hdc, L"Open Notes", -1, &rcBtn2, DT_CENTER | DT_VCENTER | DT_SINGLELINE);
+
+            SelectObject(hdc, hOldBr);
+            SelectObject(hdc, hOldPen);
+            SelectObject(hdc, hOldFont);
+            DeleteObject(hBtnBlue);
+            DeleteObject(hBtnPen);
+            DeleteObject(hBtnGray);
+            DeleteObject(hBtnGrayPen);
+            DeleteObject(hTitleFont);
+            DeleteObject(hSubFont);
+            DeleteObject(hBodyFont);
+
+            EndPaint(hwnd, &ps);
+            return 0;
+        }
+
+        case WM_LBUTTONDOWN:
+        {
+            int x = LOWORD(lParam);
+            int y = HIWORD(lParam);
+            if (y >= 144 && y <= 172)
+            {
+                if (x >= 136 && x <= 250)
+                    ShellExecuteW(NULL, L"open", L"cmd.exe", NULL, NULL, SW_SHOWNORMAL);
+                else if (x >= 260 && x <= 374)
+                    ShellExecuteW(NULL, L"open", L"notepad.exe", NULL, NULL, SW_SHOWNORMAL);
+            }
+            return 0;
+        }
+
+        case WM_DESTROY:
+            g_hKilsesiAboutWnd = NULL;
+            return 0;
+    }
+    return DefWindowProcW(hwnd, uMsg, wParam, lParam);
+}
+
+static VOID CreateKilsesiAboutWindow(VOID)
+{
+    if (g_hKilsesiAboutWnd && IsWindow(g_hKilsesiAboutWnd))
+    {
+        ShowWindow(g_hKilsesiAboutWnd, SW_RESTORE);
+        SetForegroundWindow(g_hKilsesiAboutWnd);
+        return;
+    }
+
+    static BOOL s_bRegistered = FALSE;
+    if (!s_bRegistered)
+    {
+        WNDCLASSEXW wc = { sizeof(wc) };
+        wc.style = CS_HREDRAW | CS_VREDRAW;
+        wc.lpfnWndProc = KilsesiAboutWndProc;
+        wc.hInstance = hExplorerInstance;
+        wc.hCursor = LoadCursorW(NULL, IDC_ARROW);
+        wc.hIcon = LoadIconW(NULL, IDI_APPLICATION);
+        wc.hbrBackground = (HBRUSH)(COLOR_BTNFACE + 1);
+        wc.lpszClassName = L"KilsesiAboutWndClass";
+        RegisterClassExW(&wc);
+        s_bRegistered = TRUE;
+    }
+
+    int cxScreen = GetSystemMetrics(SM_CXSCREEN);
+    int cyScreen = GetSystemMetrics(SM_CYSCREEN);
+    int w = 404, h = 218;
+    int x = (cxScreen - w) / 2;
+    int y = (cyScreen - h) / 2 - 20;
+
+    g_hKilsesiAboutWnd = CreateWindowExW(
+        0,
+        L"KilsesiAboutWndClass",
+        L"About kilsesiOS",
+        WS_OVERLAPPED | WS_CAPTION | WS_SYSMENU | WS_MINIMIZEBOX | WS_MAXIMIZEBOX | WS_VISIBLE,
+        x, y, w, h,
+        NULL, NULL, hExplorerInstance, NULL);
+}
+
+struct KILSESI_DOCK_ITEM
+{
+    LPCWSTR szLabel;
+    LPCWSTR szBadge;
+    LPCWSTR szCmd;
+    COLORREF clrBg;
+    COLORREF clrFg;
+    BOOL bRunning;
+};
+
+static const KILSESI_DOCK_ITEM g_DockItems[7] =
+{
+    { L"Finder",   L":)", L"explorer.exe", RGB(28, 142, 255),  RGB(255, 255, 255), TRUE  },
+    { L"Terminal", L">_", L"cmd.exe",      RGB(30, 32, 38),    RGB(48, 209, 88),   FALSE },
+    { L"Notes",    L"=",  L"notepad.exe",  RGB(255, 198, 10),  RGB(45, 45, 50),    FALSE },
+    { L"Calc",     L"+-", L"calc.exe",     RGB(255, 149, 0),   RGB(255, 255, 255), FALSE },
+    { L"Paint",    L"P",  L"mspaint.exe",  RGB(175, 82, 222),  RGB(255, 255, 255), FALSE },
+    { L"Monitor",  L"~",  L"taskmgr.exe",  RGB(24, 42, 48),    RGB(48, 209, 88),   FALSE },
+    { L"About",    L"i",  NULL,            RGB(0, 122, 255),   RGB(255, 255, 255), TRUE  }
+};
+
+static LRESULT CALLBACK KilsesiDockWndProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
+{
+    switch (uMsg)
+    {
+        case WM_ERASEBKGND:
+            return 1;
+
+        case WM_PAINT:
+        {
+            PAINTSTRUCT ps;
+            HDC hdc = BeginPaint(hwnd, &ps);
+            RECT rc;
+            GetClientRect(hwnd, &rc);
+
+            /* Draw rounded translucent-style macOS Dock pill background */
+            HBRUSH hDockBg = CreateSolidBrush(RGB(238, 240, 248));
+            HPEN hDockBorder = CreatePen(PS_SOLID, 2, RGB(180, 188, 208));
+            HGDIOBJ hOldBr = SelectObject(hdc, hDockBg);
+            HGDIOBJ hOldPen = SelectObject(hdc, hDockBorder);
+
+            RoundRect(hdc, 0, 0, rc.right, rc.bottom, 24, 24);
+
+            HFONT hBadgeFont = CreateFontW(-15, 0, 0, 0, FW_BOLD, FALSE, FALSE, FALSE,
+                                           DEFAULT_CHARSET, OUT_DEFAULT_PRECIS, CLIP_DEFAULT_PRECIS,
+                                           DEFAULT_QUALITY, DEFAULT_PITCH | FF_SWISS, L"Tahoma");
+            HFONT hLabelFont = CreateFontW(-10, 0, 0, 0, FW_NORMAL, FALSE, FALSE, FALSE,
+                                           DEFAULT_CHARSET, OUT_DEFAULT_PRECIS, CLIP_DEFAULT_PRECIS,
+                                           DEFAULT_QUALITY, DEFAULT_PITCH | FF_SWISS, L"Tahoma");
+            HGDIOBJ hOldFont = SelectObject(hdc, hBadgeFont);
+            SetBkMode(hdc, TRANSPARENT);
+
+            for (int i = 0; i < 7; i++)
+            {
+                int xLeft = 16 + i * 62 + (i == 6 ? 10 : 0);
+                int yTop  = 7;
+                int size  = 38;
+
+                /* Draw vertical Dock divider before the 7th item */
+                if (i == 6)
+                {
+                    HPEN hDivPen = CreatePen(PS_SOLID, 1, RGB(185, 192, 210));
+                    SelectObject(hdc, hDivPen);
+                    MoveToEx(hdc, xLeft - 7, 10, NULL);
+                    LineTo(hdc, xLeft - 7, rc.bottom - 12);
+                    SelectObject(hdc, hOldPen);
+                    DeleteObject(hDivPen);
+                }
+
+                /* Draw squircle icon background */
+                HBRUSH hIconBr = CreateSolidBrush(g_DockItems[i].clrBg);
+                HPEN hIconPen  = CreatePen(PS_SOLID, 1, RGB(255, 255, 255));
+                SelectObject(hdc, hIconBr);
+                SelectObject(hdc, hIconPen);
+                RoundRect(hdc, xLeft, yTop, xLeft + size, yTop + size, 12, 12);
+
+                /* Draw badge glyph inside squircle */
+                SelectObject(hdc, hBadgeFont);
+                SetTextColor(hdc, g_DockItems[i].clrFg);
+                RECT rcBadge = { xLeft, yTop, xLeft + size, yTop + size };
+                DrawTextW(hdc, g_DockItems[i].szBadge, -1, &rcBadge, DT_CENTER | DT_VCENTER | DT_SINGLELINE);
+
+                /* Draw label underneath */
+                SelectObject(hdc, hLabelFont);
+                SetTextColor(hdc, RGB(35, 38, 48));
+                RECT rcLbl = { xLeft - 10, yTop + size + 1, xLeft + size + 10, yTop + size + 14 };
+                DrawTextW(hdc, g_DockItems[i].szLabel, -1, &rcLbl, DT_CENTER | DT_TOP | DT_SINGLELINE);
+
+                /* Draw macOS running indicator dot */
+                if (g_DockItems[i].bRunning)
+                {
+                    HBRUSH hDotBr = CreateSolidBrush(RGB(40, 44, 52));
+                    HPEN hDotPen  = CreatePen(PS_SOLID, 1, RGB(40, 44, 52));
+                    SelectObject(hdc, hDotBr);
+                    SelectObject(hdc, hDotPen);
+                    Ellipse(hdc, xLeft + size / 2 - 2, rc.bottom - 6, xLeft + size / 2 + 2, rc.bottom - 2);
+                    DeleteObject(hDotBr);
+                    DeleteObject(hDotPen);
+                }
+
+                DeleteObject(hIconBr);
+                DeleteObject(hIconPen);
+            }
+
+            SelectObject(hdc, hOldBr);
+            SelectObject(hdc, hOldPen);
+            SelectObject(hdc, hOldFont);
+            DeleteObject(hBadgeFont);
+            DeleteObject(hLabelFont);
+            DeleteObject(hDockBg);
+            DeleteObject(hDockBorder);
+
+            EndPaint(hwnd, &ps);
+            return 0;
+        }
+
+        case WM_LBUTTONDOWN:
+        {
+            int x = LOWORD(lParam);
+            for (int i = 0; i < 7; i++)
+            {
+                int xLeft = 16 + i * 62 + (i == 6 ? 10 : 0);
+                if (x >= xLeft - 4 && x <= xLeft + 42)
+                {
+                    if (g_DockItems[i].szCmd)
+                        ShellExecuteW(NULL, L"open", g_DockItems[i].szCmd, NULL, NULL, SW_SHOWNORMAL);
+                    else
+                        CreateKilsesiAboutWindow();
+                    break;
+                }
+            }
+            return 0;
+        }
+
+        case WM_TIMER:
+        {
+            if (wParam == 1)
+            {
+                int cxScreen = GetSystemMetrics(SM_CXSCREEN);
+                int cyScreen = GetSystemMetrics(SM_CYSCREEN);
+                int w = 466, h = 66;
+                SetWindowPos(hwnd, HWND_TOPMOST, (cxScreen - w) / 2, cyScreen - h - 8, w, h,
+                             SWP_NOACTIVATE | SWP_SHOWWINDOW);
+            }
+            else if (wParam == 2)
+            {
+                KillTimer(hwnd, 2);
+                CreateKilsesiAboutWindow();
+            }
+            return 0;
+        }
+    }
+    return DefWindowProcW(hwnd, uMsg, wParam, lParam);
+}
+
+static VOID CreateKilsesiMacDock(VOID)
+{
+    if (g_hKilsesiDockWnd && IsWindow(g_hKilsesiDockWnd))
+        return;
+
+    WNDCLASSEXW wc = { sizeof(wc) };
+    wc.style = CS_HREDRAW | CS_VREDRAW;
+    wc.lpfnWndProc = KilsesiDockWndProc;
+    wc.hInstance = hExplorerInstance;
+    wc.hCursor = LoadCursorW(NULL, IDC_HAND);
+    wc.hbrBackground = (HBRUSH)(COLOR_BTNFACE + 1);
+    wc.lpszClassName = L"KilsesiMacDock";
+    RegisterClassExW(&wc);
+
+    int cxScreen = GetSystemMetrics(SM_CXSCREEN);
+    int cyScreen = GetSystemMetrics(SM_CYSCREEN);
+    int w = 466, h = 66;
+    int x = (cxScreen - w) / 2;
+    int y = cyScreen - h - 8;
+
+    g_hKilsesiDockWnd = CreateWindowExW(
+        WS_EX_TOOLWINDOW | WS_EX_TOPMOST,
+        L"KilsesiMacDock",
+        L"kilsesiOS Dock",
+        WS_POPUP | WS_VISIBLE | WS_CLIPSIBLINGS | WS_CLIPCHILDREN,
+        x, y, w, h,
+        NULL, NULL, hExplorerInstance, NULL);
+
+    if (g_hKilsesiDockWnd)
+    {
+        HRGN hRgn = CreateRoundRectRgn(0, 0, w + 1, h + 1, 24, 24);
+        SetWindowRgn(g_hKilsesiDockWnd, hRgn, TRUE);
+        SetTimer(g_hKilsesiDockWnd, 1, 2000, NULL);
+        SetTimer(g_hKilsesiDockWnd, 2, 1200, NULL);
+    }
+}
+
 struct WINDOWPOSBACKUPDATA
 {
     HWND hwnd;
@@ -264,13 +632,7 @@ public:
     HWND Create(HWND hwndParent)
     {
         WCHAR szStartCaption[32];
-        if (!LoadStringW(hExplorerInstance,
-                         IDS_START,
-                         szStartCaption,
-                         _countof(szStartCaption)))
-        {
-            wcscpy(szStartCaption, L"Start");
-        }
+        wcscpy(szStartCaption, L"kilsesiOS");
 
         DWORD dwStyle = WS_CHILD | WS_VISIBLE | WS_CLIPSIBLINGS | BS_PUSHBUTTON | BS_LEFT | BS_VCENTER;
 
@@ -2367,6 +2729,9 @@ ChangePos:
 
         /* Create the Start button */
         m_StartButton.Create(m_hWnd);
+
+        /* Create the bottom kilsesiOS macOS Dock & About window */
+        CreateKilsesiMacDock();
 
         /* Load the saved tray window settings */
         RegLoadSettings();

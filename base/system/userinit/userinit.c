@@ -384,39 +384,7 @@ StrToColorref(
 static VOID
 SetUserSysColors(VOID)
 {
-    HKEY hKey;
-    INT i;
-    WCHAR szColor[25];
-    DWORD Type, Size;
-    COLORREF crColor;
-    LONG rc;
-
-    rc = RegOpenKeyExW(HKEY_CURRENT_USER, REGSTR_PATH_COLORS,
-                       0, KEY_QUERY_VALUE, &hKey);
-    if (rc != ERROR_SUCCESS)
-    {
-        WARN("RegOpenKeyEx() failed with error %lu\n", rc);
-        return;
-    }
-
-    for (i = 0; i < ARRAYSIZE(g_RegColorNames); i++)
-    {
-        Size = sizeof(szColor);
-        rc = RegQueryValueExW(hKey, g_RegColorNames[i], NULL, &Type,
-                              (LPBYTE)szColor, &Size);
-        if (rc == ERROR_SUCCESS && Type == REG_SZ)
-        {
-            crColor = StrToColorref(szColor);
-            SetSysColors(1, &i, &crColor);
-        }
-        else
-        {
-            WARN("RegQueryValueEx(%s) failed with error %lu\n",
-                debugstr_w(g_RegColorNames[i]), rc);
-        }
-    }
-
-    RegCloseKey(hKey);
+    /* Keep the macOS Light appearance system colors defined in win32k stockobj.c */
 }
 
 static VOID
@@ -556,7 +524,7 @@ Restart:
 
     if (bIsLiveCD)
     {
-        State.NextPage = LOCALEPAGE;
+        State.NextPage = DONE;
         State.Run = SHELL;
     }
     else

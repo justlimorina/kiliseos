@@ -403,7 +403,7 @@ GetSystemVersionString(OUT PWSTR pwszzVersion,
         /* String for Safe Mode */
         Status = RtlStringCchPrintfW(pwszzVersion,
                                      cchDest,
-                                     L"ReactOS Version %S %wZ (NT %u.%u Build %u%s)\n",
+                                     L"kilsesiOS Version %S %wZ (NT %u.%u Build %u%s)\n",
                                      KERNEL_VERSION_STR,
                                      &BuildLabString,
                                      SharedUserData->NtMajorVersion,
@@ -443,9 +443,9 @@ GetSystemVersionString(OUT PWSTR pwszzVersion,
         /* Multi-string for Normal Mode */
         Status = RtlStringCchPrintfW(pwszzVersion,
                                      cchDest,
-                                     L"ReactOS Version %S\n"
+                                     L"kilsesiOS %S (macOS Sonoma Edition)\n"
                                      L"Build %wZ\n"
-                                     L"Reporting NT %u.%u (Build %u%s)\n",
+                                     L"Darwin/NT Hybrid %u.%u (Build %u%s)\n",
                                      KERNEL_VERSION_STR,
                                      &BuildLabString,
                                      SharedUserData->NtMajorVersion,
@@ -476,7 +476,7 @@ GetSystemVersionString(OUT PWSTR pwszzVersion,
         /* Fall-back string */
         Status = RtlStringCchPrintfW(pwszzVersion,
                                      cchDest,
-                                     L"ReactOS Version %S %wZ\n",
+                                     L"kilsesiOS %S %wZ\n",
                                      KERNEL_VERSION_STR,
                                      &BuildLabString);
         if (!NT_SUCCESS(Status))
@@ -2169,12 +2169,66 @@ IntPaintDesktop(HDC hDC)
         DesktopBrush = StockObjects[BLACK_BRUSH];
     }
 
-    /* Background is set to none, clear the screen */
+    /* Background is set to none, paint macOS Sonoma dynamic gradient wallpaper */
     if (doPatBlt)
     {
-        PreviousBrush = NtGdiSelectBrush(hDC, DesktopBrush);
-        NtGdiPatBlt(hDC, Rect.left, Rect.top, Rect.right, Rect.bottom, PATCOPY);
-        NtGdiSelectBrush(hDC, PreviousBrush);
+        if (!InSafeMode)
+        {
+            static GRADIENT_RECT gcap = {0, 1};
+            TRIVERTEX Vertices[2];
+            LONG cxScreen = UserGetSystemMetrics(SM_CXSCREEN);
+            LONG cyScreen = UserGetSystemMetrics(SM_CYSCREEN);
+            LONG midY = (cyScreen * 58) / 100;
+
+            if (cxScreen <= 0) cxScreen = Rect.right;
+            if (cyScreen <= 0) cyScreen = Rect.bottom;
+            if (midY <= 0) midY = cyScreen / 2;
+
+            /* Top band: Deep macOS Indigo-Blue to Vibrant Azure Cyan */
+            Vertices[0].x = 0;
+            Vertices[0].y = 0;
+            Vertices[0].Red   = 18 << 8;
+            Vertices[0].Green = 42 << 8;
+            Vertices[0].Blue  = 112 << 8;
+            Vertices[0].Alpha = 0;
+
+            Vertices[1].x = cxScreen;
+            Vertices[1].y = midY;
+            Vertices[1].Red   = 38 << 8;
+            Vertices[1].Green = 132 << 8;
+            Vertices[1].Blue  = 226 << 8;
+            Vertices[1].Alpha = 0;
+
+            GreGradientFill(hDC, Vertices, 2, &gcap, 1, GRADIENT_FILL_RECT_V);
+
+            /* Bottom band: Vibrant Azure Cyan to Warm macOS Sonoma Violet-Magenta */
+            Vertices[0].x = 0;
+            Vertices[0].y = midY;
+            Vertices[0].Red   = 38 << 8;
+            Vertices[0].Green = 132 << 8;
+            Vertices[0].Blue  = 226 << 8;
+            Vertices[0].Alpha = 0;
+
+            Vertices[1].x = cxScreen;
+            Vertices[1].y = cyScreen;
+            Vertices[1].Red   = 138 << 8;
+            Vertices[1].Green = 68 << 8;
+            Vertices[1].Blue  = 182 << 8;
+            Vertices[1].Alpha = 0;
+
+            if (!GreGradientFill(hDC, Vertices, 2, &gcap, 1, GRADIENT_FILL_RECT_V))
+            {
+                PreviousBrush = NtGdiSelectBrush(hDC, DesktopBrush);
+                NtGdiPatBlt(hDC, Rect.left, Rect.top, Rect.right, Rect.bottom, PATCOPY);
+                NtGdiSelectBrush(hDC, PreviousBrush);
+            }
+        }
+        else
+        {
+            PreviousBrush = NtGdiSelectBrush(hDC, DesktopBrush);
+            NtGdiPatBlt(hDC, Rect.left, Rect.top, Rect.right, Rect.bottom, PATCOPY);
+            NtGdiSelectBrush(hDC, PreviousBrush);
+        }
     }
 
     /*

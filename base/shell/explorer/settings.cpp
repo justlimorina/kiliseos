@@ -74,13 +74,13 @@ BOOL TaskbarSettings::Load()
     cbSize = sizeof(sr);
     dwRet = SHGetValueW(hkExplorer, L"StuckRects2", L"Settings", NULL, &sr, &cbSize);
 
-    /* Make sure we have correct values here */
+    /* Make sure we have correct values here - kilsesiOS docks the Menu Bar at ABE_TOP */
     if (dwRet != ERROR_SUCCESS || sr.cbSize != sizeof(sr) || cbSize != sizeof(sr))
     {
-        sr.Position = ABE_BOTTOM;
+        sr.Position = ABE_TOP;
         sr.AutoHide = FALSE;
         sr.AlwaysOnTop = TRUE;
-        sr.SmSmallIcons = FALSE;
+        sr.SmSmallIcons = TRUE;
         sr.HideClock = FALSE;
         sr.Rect.left = sr.Rect.top = 0;
         sr.Rect.bottom = sr.Rect.right = 1;
@@ -88,8 +88,8 @@ BOOL TaskbarSettings::Load()
     }
     else
     {
-        if (sr.Position > ABE_BOTTOM)
-            sr.Position = ABE_BOTTOM;
+        sr.Position = ABE_TOP;
+        sr.SmSmallIcons = TRUE;
     }
 
     return TRUE;

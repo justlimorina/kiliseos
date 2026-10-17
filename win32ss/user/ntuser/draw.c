@@ -789,63 +789,73 @@ BOOL FASTCALL UITOOLS95_DrawFrameCaption(HDC dc, LPRECT r, UINT uFlags)
 {
     LOGFONTW lf;
     HFONT hFont, hOldFont;
-    COLORREF clrsave;
+    COLORREF clrsave, clrFill, clrBorder;
     RECT myr;
-    INT bkmode;
-    WCHAR Symbol;
+    INT bkmode, cxy;
+    WCHAR Center = L'n', OutRight = L'j', OutLeft = L'k';
+
     switch(uFlags & 0xf)
     {
         case DFCS_CAPTIONCLOSE:
-		Symbol = 'r';
-		break;
-        case DFCS_CAPTIONHELP:
-		Symbol = 's';
-		break;
+            clrFill   = (uFlags & DFCS_PUSHED) ? RGB(210, 55, 50) : RGB(255, 95, 86);
+            clrBorder = RGB(224, 68, 62);
+            break;
         case DFCS_CAPTIONMIN:
-		Symbol = '0';
-		break;
+            clrFill   = (uFlags & DFCS_PUSHED) ? RGB(215, 150, 25) : RGB(255, 189, 46);
+            clrBorder = RGB(222, 161, 35);
+            break;
         case DFCS_CAPTIONMAX:
-		Symbol = '1';
-		break;
         case DFCS_CAPTIONRESTORE:
-		Symbol = '2';
-		break;
+            clrFill   = (uFlags & DFCS_PUSHED) ? RGB(25, 160, 45) : RGB(39, 201, 63);
+            clrBorder = RGB(26, 171, 41);
+            break;
+        case DFCS_CAPTIONHELP:
+            clrFill   = RGB(88, 86, 214);
+            clrBorder = RGB(68, 66, 184);
+            break;
         default:
-             ERR("Invalid caption; flags=0x%04x\n", uFlags);
-             return FALSE;
+            ERR("Invalid caption; flags=0x%04x\n", uFlags);
+            return FALSE;
     }
-    IntDrawRectEdge(dc,r,(uFlags&DFCS_PUSHED) ? EDGE_SUNKEN : EDGE_RAISED, BF_RECT | BF_MIDDLE | BF_SOFT);
+
+    if (uFlags & DFCS_INACTIVE)
+    {
+        clrFill   = RGB(204, 204, 210);
+        clrBorder = RGB(175, 175, 182);
+    }
+
+    cxy = UITOOLS_MakeSquareRect(r, &myr);
+    if (cxy > 13)
+    {
+        INT shrink = (cxy - 13) / 2;
+        myr.left   += shrink;
+        myr.top    += shrink;
+        myr.right  -= shrink;
+        myr.bottom -= shrink;
+        cxy = myr.bottom - myr.top;
+    }
+
     RtlZeroMemory(&lf, sizeof(LOGFONTW));
-    UITOOLS_MakeSquareRect(r, &myr);
-    myr.left += 1;
-    myr.top += 1;
-    myr.right -= 1;
-    myr.bottom -= 1;
-    if(uFlags & DFCS_PUSHED)
-       RECTL_vOffsetRect(&myr,1,1);
-    lf.lfHeight = myr.bottom - myr.top;
+    lf.lfHeight = cxy;
     lf.lfWidth = 0;
     lf.lfWeight = FW_NORMAL;
     lf.lfCharSet = DEFAULT_CHARSET;
     lf.lfQuality = NONANTIALIASED_QUALITY;
     RtlCopyMemory(lf.lfFaceName, L"Marlett", sizeof(L"Marlett"));
     hFont = GreCreateFontIndirectW(&lf);
-    /* save font and text color */
     hOldFont = NtGdiSelectFont(dc, hFont);
     clrsave = GreGetTextColor(dc);
     bkmode = GreGetBkMode(dc);
-    /* set color and drawing mode */
+
     IntGdiSetBkMode(dc, TRANSPARENT);
-    if(uFlags & DFCS_INACTIVE)
-    {
-        /* draw shadow */
-        IntGdiSetTextColor(dc, IntGetSysColor(COLOR_BTNHIGHLIGHT));
-        GreTextOutW(dc, myr.left + 1, myr.top + 1, &Symbol, 1);
-    }
-    IntGdiSetTextColor(dc, IntGetSysColor((uFlags & DFCS_INACTIVE) ? COLOR_BTNSHADOW : COLOR_BTNTEXT));
-    /* draw selected symbol */
-    GreTextOutW(dc, myr.left, myr.top, &Symbol, 1);
-    /* restore previous settings */
+
+    /* Draw circular traffic light fill ('n' in Marlett) and circular border ('j', 'k') */
+    IntGdiSetTextColor(dc, clrFill);
+    GreTextOutW(dc, myr.left, myr.top, &Center, 1);
+    IntGdiSetTextColor(dc, clrBorder);
+    GreTextOutW(dc, myr.left, myr.top, &OutRight, 1);
+    GreTextOutW(dc, myr.left, myr.top, &OutLeft, 1);
+
     IntGdiSetTextColor(dc, clrsave);
     NtGdiSelectFont(dc, hOldFont);
     IntGdiSetBkMode(dc, bkmode);
