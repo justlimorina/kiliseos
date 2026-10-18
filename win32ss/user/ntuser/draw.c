@@ -435,7 +435,7 @@ BOOL FASTCALL IntDrawRectEdge(HDC hdc, LPRECT rc, UINT uType, UINT uFlags)
     }
     else
     {
-        /* kilsesiOS Adwaita/macOS UI: Flatten 1995-era 3D bevels into clean 1px flat borders */
+        /* kiliseOS Adwaita/macOS UI: Flatten 1995-era 3D bevels into clean 1px flat borders */
         LTInnerI = RBInnerI = LTRBInnerFlat[uType & (BDR_INNER|BDR_OUTER)];
         LTOuterI = RBOuterI = LTRBOuterFlat[uType & (BDR_INNER|BDR_OUTER)];
         if (LTInnerI != -1)

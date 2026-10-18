@@ -69,7 +69,7 @@ ApiSetResolveToHost(
         LONG result = RtlCompareUnicodeString(&Tmp, &g_Apisets[Index].Name, TRUE);
         if (result == 0)
         {
-            /* kilsesiOS: Always resolve Windows 7/8/8.1/10/11 API Sets */
+            /* kiliseOS: Always resolve Windows 7/8/8.1/10/11 API Sets */
             ApisetVersion |= (APISET_WIN7 | APISET_WIN8 | APISET_WIN81 | APISET_WIN10);
             if (g_Apisets[Index].dwOsVersions & ApisetVersion)
             {

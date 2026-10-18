@@ -74,7 +74,7 @@ BOOL TaskbarSettings::Load()
     cbSize = sizeof(sr);
     dwRet = SHGetValueW(hkExplorer, L"StuckRects2", L"Settings", NULL, &sr, &cbSize);
 
-    /* Make sure we have correct values here - kilsesiOS docks the Menu Bar at ABE_TOP */
+    /* Make sure we have correct values here - kiliseOS docks the Menu Bar at ABE_TOP */
     if (dwRet != ERROR_SUCCESS || sr.cbSize != sizeof(sr) || cbSize != sizeof(sr))
     {
         sr.Position = ABE_TOP;

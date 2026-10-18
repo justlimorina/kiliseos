@@ -1035,7 +1035,7 @@ LdrpApisetVersion(VOID)
             case _WIN32_WINNT_VISTA:
             case 0:
             default:
-                /* kilsesiOS: Enable Windows 7/8/8.1/10/11 API Sets by default for all apps */
+                /* kiliseOS: Enable Windows 7/8/8.1/10/11 API Sets by default for all apps */
                 CachedApisetVersion = APISET_WIN7 | APISET_WIN8 | APISET_WIN81 | APISET_WIN10;
                 break;
         }

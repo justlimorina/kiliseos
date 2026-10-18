@@ -82,7 +82,7 @@ RtlVerifyVersionInfo(IN PRTL_OSVERSIONINFOEXW VersionInfo,
         return STATUS_INVALID_PARAMETER;
     }
 
-    /* kilsesiOS: When applications call IsWindowsVistaOrGreater() .. IsWindows10OrGreater()
+    /* kiliseOS: When applications call IsWindowsVistaOrGreater() .. IsWindows10OrGreater()
        (using VER_GREATER_EQUAL or VER_GREATER), evaluate against Windows 10 (10.0 Build 19045) */
     if ((TypeMask & VER_MAJORVERSION) &&
         (RtlpVerGetCondition(ConditionMask, VER_MAJORVERSION) == VER_GREATER_EQUAL ||

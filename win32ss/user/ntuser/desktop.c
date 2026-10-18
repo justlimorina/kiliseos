@@ -403,7 +403,7 @@ GetSystemVersionString(OUT PWSTR pwszzVersion,
         /* String for Safe Mode */
         Status = RtlStringCchPrintfW(pwszzVersion,
                                      cchDest,
-                                     L"kilsesiOS Version %S %wZ (NT %u.%u Build %u%s)\n",
+                                     L"kiliseOS Version %S %wZ (NT %u.%u Build %u%s)\n",
                                      KERNEL_VERSION_STR,
                                      &BuildLabString,
                                      SharedUserData->NtMajorVersion,
@@ -443,9 +443,9 @@ GetSystemVersionString(OUT PWSTR pwszzVersion,
         /* Multi-string for Normal Mode */
         Status = RtlStringCchPrintfW(pwszzVersion,
                                      cchDest,
-                                     L"kilsesiOS %S (macOS Sonoma Edition)\n"
+                                     L"kiliseOS %S (macOS Sonoma Edition)\n"
                                      L"Build %wZ\n"
-                                     L"Darwin/NT Hybrid %u.%u (Build %u%s)\n",
+                                     L"Windows NT %u.%u (Build %u%s)\n",
                                      KERNEL_VERSION_STR,
                                      &BuildLabString,
                                      SharedUserData->NtMajorVersion,
@@ -476,7 +476,7 @@ GetSystemVersionString(OUT PWSTR pwszzVersion,
         /* Fall-back string */
         Status = RtlStringCchPrintfW(pwszzVersion,
                                      cchDest,
-                                     L"kilsesiOS %S %wZ\n",
+                                     L"kiliseOS %S %wZ\n",
                                      KERNEL_VERSION_STR,
                                      &BuildLabString);
         if (!NT_SUCCESS(Status))

@@ -48,10 +48,10 @@ HRESULT TrayWindowCtxMenuCreator(ITrayWindow * TrayWnd, IN HWND hWndOwner, ICont
 
 enum { NONE, TILED, CASCADED } g_Arrangement = NONE;
 
-static HWND g_hKilsesiAboutWnd = NULL;
-static HWND g_hKilsesiDockWnd  = NULL;
+static HWND g_hKiliseAboutWnd = NULL;
+static HWND g_hKiliseDockWnd  = NULL;
 
-static LRESULT CALLBACK KilsesiAboutWndProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
+static LRESULT CALLBACK KiliseAboutWndProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 {
     static HBRUSH s_hSheetBg = NULL;
     static HFONT  s_hCtrlFont = NULL;
@@ -157,7 +157,7 @@ static LRESULT CALLBACK KilsesiAboutWndProc(HWND hwnd, UINT uMsg, WPARAM wParam,
 
             SetBkMode(hdc, TRANSPARENT);
 
-            /* Title: kilsesiOS Sonoma */
+            /* Title: KiliseOS Sonoma */
             HFONT hTitleFont = CreateFontW(-20, 0, 0, 0, FW_BOLD, FALSE, FALSE, FALSE,
                                            DEFAULT_CHARSET, OUT_DEFAULT_PRECIS, CLIP_DEFAULT_PRECIS,
                                            DEFAULT_QUALITY, DEFAULT_PITCH | FF_SWISS, L"Tahoma");
@@ -171,7 +171,7 @@ static LRESULT CALLBACK KilsesiAboutWndProc(HWND hwnd, UINT uMsg, WPARAM wParam,
             HGDIOBJ hOldFont = SelectObject(hdc, hTitleFont);
             SetTextColor(hdc, RGB(24, 24, 28));
             RECT rcText = { 136, 20, rc.right - 16, 48 };
-            DrawTextW(hdc, L"kilsesiOS Sonoma", -1, &rcText, DT_LEFT | DT_SINGLELINE | DT_VCENTER);
+            DrawTextW(hdc, L"kiliseOS Sonoma", -1, &rcText, DT_LEFT | DT_SINGLELINE | DT_VCENTER);
 
             SelectObject(hdc, hSubFont);
             SetTextColor(hdc, RGB(0, 122, 255));
@@ -181,7 +181,7 @@ static LRESULT CALLBACK KilsesiAboutWndProc(HWND hwnd, UINT uMsg, WPARAM wParam,
             SelectObject(hdc, hBodyFont);
             SetTextColor(hdc, RGB(70, 70, 82));
             RECT rcSpec1 = { 136, 72, rc.right - 16, 90 };
-            DrawTextW(hdc, L"Kernel:     Darwin / NT 10.0 Build 19045 Hybrid", -1, &rcSpec1, DT_LEFT | DT_SINGLELINE);
+            DrawTextW(hdc, L"Kernel:     Windows NT 10.0 (Build 19045 / Wine Layer)", -1, &rcSpec1, DT_LEFT | DT_SINGLELINE);
             RECT rcSpec2 = { 136, 90, rc.right - 16, 108 };
             DrawTextW(hdc, L"Graphics:   Aqua Quartz-GDI + Wine D3D10/11/12", -1, &rcSpec2, DT_LEFT | DT_SINGLELINE);
             RECT rcSpec3 = { 136, 108, rc.right - 16, 126 };
@@ -197,18 +197,18 @@ static LRESULT CALLBACK KilsesiAboutWndProc(HWND hwnd, UINT uMsg, WPARAM wParam,
         }
 
         case WM_DESTROY:
-            g_hKilsesiAboutWnd = NULL;
+            g_hKiliseAboutWnd = NULL;
             return 0;
     }
     return DefWindowProcW(hwnd, uMsg, wParam, lParam);
 }
 
-static VOID CreateKilsesiAboutWindow(VOID)
+static VOID CreateKiliseAboutWindow(VOID)
 {
-    if (g_hKilsesiAboutWnd && IsWindow(g_hKilsesiAboutWnd))
+    if (g_hKiliseAboutWnd && IsWindow(g_hKiliseAboutWnd))
     {
-        ShowWindow(g_hKilsesiAboutWnd, SW_RESTORE);
-        SetForegroundWindow(g_hKilsesiAboutWnd);
+        ShowWindow(g_hKiliseAboutWnd, SW_RESTORE);
+        SetForegroundWindow(g_hKiliseAboutWnd);
         return;
     }
 
@@ -217,12 +217,12 @@ static VOID CreateKilsesiAboutWindow(VOID)
     {
         WNDCLASSEXW wc = { sizeof(wc) };
         wc.style = CS_HREDRAW | CS_VREDRAW;
-        wc.lpfnWndProc = KilsesiAboutWndProc;
+        wc.lpfnWndProc = KiliseAboutWndProc;
         wc.hInstance = hExplorerInstance;
         wc.hCursor = LoadCursorW(NULL, IDC_ARROW);
         wc.hIcon = LoadIconW(NULL, IDI_APPLICATION);
         wc.hbrBackground = (HBRUSH)(COLOR_BTNFACE + 1);
-        wc.lpszClassName = L"KilsesiAboutWndClass";
+        wc.lpszClassName = L"KiliseAboutWndClass";
         RegisterClassExW(&wc);
         s_bRegistered = TRUE;
     }
@@ -233,24 +233,24 @@ static VOID CreateKilsesiAboutWindow(VOID)
     int x = (cxScreen - w) / 2;
     int y = (cyScreen - h) / 2 - 20;
 
-    g_hKilsesiAboutWnd = CreateWindowExW(
+    g_hKiliseAboutWnd = CreateWindowExW(
         0,
-        L"KilsesiAboutWndClass",
-        L"About kilsesiOS",
+        L"KiliseAboutWndClass",
+        L"About kiliseOS",
         WS_OVERLAPPED | WS_CAPTION | WS_SYSMENU | WS_MINIMIZEBOX | WS_MAXIMIZEBOX | WS_VISIBLE | WS_CLIPCHILDREN,
         x, y, w, h,
         NULL, NULL, hExplorerInstance, NULL);
 
-    if (g_hKilsesiAboutWnd)
+    if (g_hKiliseAboutWnd)
     {
-        SetWindowPos(g_hKilsesiAboutWnd, HWND_TOP, 0, 0, 0, 0, SWP_NOMOVE | SWP_NOSIZE | SWP_SHOWWINDOW);
-        SetForegroundWindow(g_hKilsesiAboutWnd);
+        SetWindowPos(g_hKiliseAboutWnd, HWND_TOP, 0, 0, 0, 0, SWP_NOMOVE | SWP_NOSIZE | SWP_SHOWWINDOW);
+        SetForegroundWindow(g_hKiliseAboutWnd);
     }
 }
 
-static HWND g_hKilsesiMenuBar  = NULL;
+static HWND g_hKiliseMenuBar  = NULL;
 
-struct KILSESI_DOCK_ITEM
+struct Kilise_DOCK_ITEM
 {
     LPCWSTR szLabel;
     UINT    uShellIconId;
@@ -259,7 +259,7 @@ struct KILSESI_DOCK_ITEM
     BOOL    bRunning;
 };
 
-static const KILSESI_DOCK_ITEM g_DockItems[9] =
+static const Kilise_DOCK_ITEM g_DockItems[9] =
 {
     { L"Finder",         46,  L"explorer.exe", NULL, TRUE  },
     { L"Web",            512, L"iexplore.exe", NULL, FALSE },
@@ -268,14 +268,14 @@ static const KILSESI_DOCK_ITEM g_DockItems[9] =
     { L"Calculator",     171, L"calc.exe",     NULL, FALSE },
     { L"Graphics",       226, L"mspaint.exe",  NULL, FALSE },
     { L"System Monitor", 275, L"taskmgr.exe",  NULL, FALSE },
-    { L"About kilsesiOS",24,  NULL,            NULL, TRUE  },
+    { L"About kiliseOS", 24,  NULL,            NULL, TRUE  },
     { L"Trash",          32,  L"explorer.exe", L"::{645FF040-5081-101B-9F08-00AA002F954E}", FALSE }
 };
 
 static HICON g_hDockIcons[9] = { NULL };
 static INT   g_iDockHover    = -1;
 
-static VOID EnsureKilsesiDockIconsLoaded(VOID)
+static VOID EnsureKiliseDockIconsLoaded(VOID)
 {
     HMODULE hShell32 = GetModuleHandleW(L"shell32.dll");
     if (!hShell32)
@@ -295,12 +295,12 @@ static VOID EnsureKilsesiDockIconsLoaded(VOID)
     }
 }
 
-static INT GetKilsesiDockItemX(int index)
+static INT GetKiliseDockItemX(int index)
 {
     return 14 + index * 46 + (index >= 7 ? 10 : 0);
 }
 
-static LRESULT CALLBACK KilsesiDockWndProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
+static LRESULT CALLBACK KiliseDockWndProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 {
     switch (uMsg)
     {
@@ -316,7 +316,7 @@ static LRESULT CALLBACK KilsesiDockWndProc(HWND hwnd, UINT uMsg, WPARAM wParam, 
             {
                 for (int i = 0; i < 9; i++)
                 {
-                    int xLeft = GetKilsesiDockItemX(i);
+                    int xLeft = GetKiliseDockItemX(i);
                     if (x >= xLeft - 4 && x <= xLeft + 36)
                     {
                         newHover = i;
@@ -351,7 +351,7 @@ static LRESULT CALLBACK KilsesiDockWndProc(HWND hwnd, UINT uMsg, WPARAM wParam, 
             RECT rc;
             GetClientRect(hwnd, &rc);
 
-            EnsureKilsesiDockIconsLoaded();
+            EnsureKiliseDockIconsLoaded();
 
             /* Sleek icon-only macOS / GNOME Adwaita Dock pill (no permanent text titles) */
             HBRUSH hDockBg = CreateSolidBrush(RGB(242, 244, 250));
@@ -370,7 +370,7 @@ static LRESULT CALLBACK KilsesiDockWndProc(HWND hwnd, UINT uMsg, WPARAM wParam, 
 
             for (int i = 0; i < 9; i++)
             {
-                int xLeft = GetKilsesiDockItemX(i);
+                int xLeft = GetKiliseDockItemX(i);
                 int yTop  = 8;
                 int size  = 32;
 
@@ -430,13 +430,13 @@ static LRESULT CALLBACK KilsesiDockWndProc(HWND hwnd, UINT uMsg, WPARAM wParam, 
             int x = (short)LOWORD(lParam);
             for (int i = 0; i < 9; i++)
             {
-                int xLeft = GetKilsesiDockItemX(i);
+                int xLeft = GetKiliseDockItemX(i);
                 if (x >= xLeft - 4 && x <= xLeft + 36)
                 {
                     if (g_DockItems[i].szCmd)
                         ShellExecuteW(NULL, L"open", g_DockItems[i].szCmd, g_DockItems[i].szArgs, NULL, SW_SHOWNORMAL);
                     else
-                        CreateKilsesiAboutWindow();
+                        CreateKiliseAboutWindow();
                     break;
                 }
             }
@@ -456,7 +456,7 @@ static LRESULT CALLBACK KilsesiDockWndProc(HWND hwnd, UINT uMsg, WPARAM wParam, 
             else if (wParam == 2)
             {
                 KillTimer(hwnd, 2);
-                CreateKilsesiAboutWindow();
+                CreateKiliseAboutWindow();
             }
             return 0;
         }
@@ -464,18 +464,18 @@ static LRESULT CALLBACK KilsesiDockWndProc(HWND hwnd, UINT uMsg, WPARAM wParam, 
     return DefWindowProcW(hwnd, uMsg, wParam, lParam);
 }
 
-static VOID CreateKilsesiMacDock(VOID)
+static VOID CreateKiliseMacDock(VOID)
 {
-    if (g_hKilsesiDockWnd && IsWindow(g_hKilsesiDockWnd))
+    if (g_hKiliseDockWnd && IsWindow(g_hKiliseDockWnd))
         return;
 
     WNDCLASSEXW wc = { sizeof(wc) };
     wc.style = CS_HREDRAW | CS_VREDRAW;
-    wc.lpfnWndProc = KilsesiDockWndProc;
+    wc.lpfnWndProc = KiliseDockWndProc;
     wc.hInstance = hExplorerInstance;
     wc.hCursor = LoadCursorW(NULL, IDC_HAND);
     wc.hbrBackground = (HBRUSH)(COLOR_BTNFACE + 1);
-    wc.lpszClassName = L"KilsesiMacDock";
+    wc.lpszClassName = L"KiliseMacDock";
     RegisterClassExW(&wc);
 
     int cxScreen = GetSystemMetrics(SM_CXSCREEN);
@@ -484,20 +484,20 @@ static VOID CreateKilsesiMacDock(VOID)
     int x = (cxScreen - w) / 2;
     int y = cyScreen - h - 8;
 
-    g_hKilsesiDockWnd = CreateWindowExW(
+    g_hKiliseDockWnd = CreateWindowExW(
         WS_EX_TOOLWINDOW | WS_EX_TOPMOST,
-        L"KilsesiMacDock",
-        L"kilsesiOS Dock",
+        L"KiliseMacDock",
+        L"kiliseOS Dock",
         WS_POPUP | WS_VISIBLE | WS_CLIPSIBLINGS | WS_CLIPCHILDREN,
         x, y, w, h,
         NULL, NULL, hExplorerInstance, NULL);
 
-    if (g_hKilsesiDockWnd)
+    if (g_hKiliseDockWnd)
     {
         HRGN hRgn = CreateRoundRectRgn(0, 0, w + 1, h + 1, 22, 22);
-        SetWindowRgn(g_hKilsesiDockWnd, hRgn, TRUE);
-        SetTimer(g_hKilsesiDockWnd, 1, 2000, NULL);
-        SetTimer(g_hKilsesiDockWnd, 2, 3000, NULL);
+        SetWindowRgn(g_hKiliseDockWnd, hRgn, TRUE);
+        SetTimer(g_hKiliseDockWnd, 1, 2000, NULL);
+        SetTimer(g_hKiliseDockWnd, 2, 3000, NULL);
     }
 }
 
@@ -505,7 +505,7 @@ static VOID CreateKilsesiMacDock(VOID)
  * True Flat Edge-to-Edge macOS / GNOME Adwaita Top Menu Bar (26px)
  * Replaces the 3D Windows Start Button, sunken Taskbar band, and sunken Tray
  * ============================================================================ */
-struct KILSESI_MENUBAR_ITEM
+struct Kilise_MENUBAR_ITEM
 {
     LPCWSTR szText;
     INT     xLeft;
@@ -513,22 +513,22 @@ struct KILSESI_MENUBAR_ITEM
     BOOL    bBold;
 };
 
-static const KILSESI_MENUBAR_ITEM g_MenuBarItems[9] =
+static const Kilise_MENUBAR_ITEM g_MenuBarItems[9] =
 {
-    { L"",          6,   34,  TRUE  }, /* 0: kilsesiOS Emblem -> Start/Applications Menu */
-    { L"kilsesiOS", 36,  104, TRUE  }, /* 1: System Menu / About kilsesiOS */
-    { L"Finder",    106, 156, TRUE  }, /* 2: Finder / File Manager */
-    { L"File",      158, 192, FALSE }, /* 3: File -> Text Editor */
-    { L"Edit",      194, 228, FALSE }, /* 4: Edit -> Graphics */
-    { L"View",      230, 270, FALSE }, /* 5: View -> System Monitor */
-    { L"Go",        272, 302, FALSE }, /* 6: Go -> Terminal */
-    { L"Window",    304, 360, FALSE }, /* 7: Window -> Calculator */
-    { L"Help",      362, 400, FALSE }  /* 8: Help -> About kilsesiOS */
+    { L"",         6,   34,  TRUE  }, /* 0: kiliseOS Emblem -> Start/Applications Menu */
+    { L"kiliseOS", 36,  96,  TRUE  }, /* 1: System Menu / About kiliseOS */
+    { L"Finder",   98,  148, TRUE  }, /* 2: Finder / File Manager */
+    { L"File",     150, 184, FALSE }, /* 3: File -> Text Editor */
+    { L"Edit",     186, 220, FALSE }, /* 4: Edit -> Graphics */
+    { L"View",     222, 262, FALSE }, /* 5: View -> System Monitor */
+    { L"Go",       264, 294, FALSE }, /* 6: Go -> Terminal */
+    { L"Window",   296, 352, FALSE }, /* 7: Window -> Calculator */
+    { L"Help",     354, 392, FALSE }  /* 8: Help -> About kiliseOS */
 };
 
 static INT g_iMenuBarHover = -1;
 
-static LRESULT CALLBACK KilsesiMenuBarWndProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
+static LRESULT CALLBACK KiliseMenuBarWndProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 {
     switch (uMsg)
     {
@@ -592,7 +592,7 @@ static LRESULT CALLBACK KilsesiMenuBarWndProc(HWND hwnd, UINT uMsg, WPARAM wPara
                             break;
                         case 1:
                         case 8:
-                            CreateKilsesiAboutWindow();
+                            CreateKiliseAboutWindow();
                             break;
                         case 2:
                             ShellExecuteW(NULL, L"open", L"explorer.exe", NULL, NULL, SW_SHOWNORMAL);
@@ -624,7 +624,7 @@ static LRESULT CALLBACK KilsesiMenuBarWndProc(HWND hwnd, UINT uMsg, WPARAM wPara
             }
             else if (x > rc.right - 115)
             {
-                CreateKilsesiAboutWindow();
+                CreateKiliseAboutWindow();
             }
             return 0;
         }
@@ -677,7 +677,7 @@ static LRESULT CALLBACK KilsesiMenuBarWndProc(HWND hwnd, UINT uMsg, WPARAM wPara
 
                 if (i == 0)
                 {
-                    /* Draw sleek kilsesiOS / Sonoma geometric emblem at (13, 6..20) */
+                    /* Draw sleek kiliseOS / Sonoma geometric emblem at (13, 6..20) */
                     HBRUSH hLogo1 = CreateSolidBrush(RGB(28, 113, 216));
                     HPEN hLogoPen = CreatePen(PS_SOLID, 1, RGB(24, 92, 190));
                     SelectObject(hdc, hLogo1);
@@ -793,22 +793,22 @@ static LRESULT CALLBACK KilsesiMenuBarWndProc(HWND hwnd, UINT uMsg, WPARAM wPara
     return DefWindowProcW(hwnd, uMsg, wParam, lParam);
 }
 
-static HWND EnsureKilsesiMenuBarCreated(HWND hwndParent, int cx, int cy)
+static HWND EnsureKiliseMenuBarCreated(HWND hwndParent, int cx, int cy)
 {
-    if (!g_hKilsesiMenuBar || !IsWindow(g_hKilsesiMenuBar))
+    if (!g_hKiliseMenuBar || !IsWindow(g_hKiliseMenuBar))
     {
         WNDCLASSEXW wc = { sizeof(wc) };
         wc.style = CS_HREDRAW | CS_VREDRAW;
-        wc.lpfnWndProc = KilsesiMenuBarWndProc;
+        wc.lpfnWndProc = KiliseMenuBarWndProc;
         wc.hInstance = hExplorerInstance;
         wc.hCursor = LoadCursorW(NULL, IDC_ARROW);
         wc.hbrBackground = NULL;
-        wc.lpszClassName = L"KilsesiMenuBarClass";
+        wc.lpszClassName = L"KiliseMenuBarClass";
         RegisterClassExW(&wc);
 
-        g_hKilsesiMenuBar = CreateWindowExW(
+        g_hKiliseMenuBar = CreateWindowExW(
             0,
-            L"KilsesiMenuBarClass",
+            L"KiliseMenuBarClass",
             L"",
             WS_CHILD | WS_VISIBLE | WS_CLIPSIBLINGS,
             0, 0, cx, cy,
@@ -819,9 +819,9 @@ static HWND EnsureKilsesiMenuBarCreated(HWND hwndParent, int cx, int cy)
     }
     else
     {
-        SetWindowPos(g_hKilsesiMenuBar, HWND_TOP, 0, 0, cx, cy, SWP_NOACTIVATE | SWP_SHOWWINDOW);
+        SetWindowPos(g_hKiliseMenuBar, HWND_TOP, 0, 0, cx, cy, SWP_NOACTIVATE | SWP_SHOWWINDOW);
     }
-    return g_hKilsesiMenuBar;
+    return g_hKiliseMenuBar;
 }
 
 struct WINDOWPOSBACKUPDATA
@@ -1040,7 +1040,7 @@ public:
     HWND Create(HWND hwndParent)
     {
         WCHAR szStartCaption[64];
-        wcscpy(szStartCaption, L"kilsesiOS   Finder   File   Edit   View   Go   Help");
+        wcscpy(szStartCaption, L"kiliseOS   Finder   File   Edit   View   Go   Help");
 
         DWORD dwStyle = WS_CHILD | WS_VISIBLE | WS_CLIPSIBLINGS | BS_PUSHBUTTON | BS_LEFT | BS_VCENTER;
 
@@ -2533,7 +2533,7 @@ ChangePos:
         }
 
         /* Create and size the full-width flat macOS / Adwaita Menu Bar */
-        EnsureKilsesiMenuBarCreated(m_hWnd, rcClient.right - rcClient.left, rcClient.bottom - rcClient.top);
+        EnsureKiliseMenuBarCreated(m_hWnd, rcClient.right - rcClient.left, rcClient.bottom - rcClient.top);
     }
 
     void FitToRebar(PRECT pRect)
@@ -2988,8 +2988,8 @@ ChangePos:
         /* Create the Start button */
         m_StartButton.Create(m_hWnd);
 
-        /* Create the bottom kilsesiOS macOS Dock & About window */
-        CreateKilsesiMacDock();
+        /* Create the bottom KiliseOS macOS Dock & About window */
+        CreateKiliseMacDock();
 
         /* Load the saved tray window settings */
         RegLoadSettings();

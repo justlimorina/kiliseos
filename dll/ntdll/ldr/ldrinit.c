@@ -1678,7 +1678,7 @@ LdrpInitializeProcessCompat(PVOID pProcessActctx, PVOID* pOldShimData)
     if (ContextCompatInfo->ElementCount == 0)
         return;
 
-    /* kilsesiOS: Search for known GUIDs starting from newest (Windows 10) to oldest,
+    /* kiliseOS: Search for known GUIDs starting from newest (Windows 10) to oldest,
        matching Windows 10/11 behavior so modern manifests get Windows 10 compatibility. */
     for (cur = 0; cur < RTL_NUMBER_OF(KnownCompatGuids); ++cur)
     {
