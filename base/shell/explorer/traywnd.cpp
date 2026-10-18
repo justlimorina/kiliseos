@@ -527,19 +527,58 @@ static const Kilise_MENUBAR_ITEM g_MenuBarItems[9] =
 };
 
 static INT g_iMenuBarHover = -1;
+static WCHAR g_szKiliseActiveApp[96] = L"Finder";
+static HWND g_hKiliseActiveApp = NULL;
+
+/* The shell owns the menu bar, but reflects the focused application's title
+ * and forwards File/Edit/View/Go/Window selections to its normal Win32 menu. */
+static VOID KiliseUpdateActiveApplication(VOID)
+{
+    HWND hwnd = GetForegroundWindow();
+    DWORD pid = 0;
+    GetWindowThreadProcessId(hwnd, &pid);
+    if (!hwnd || pid == GetCurrentProcessId() || hwnd == g_hKiliseMenuBar || hwnd == g_hKiliseDockWnd)
+        return;
+    WCHAR title[_countof(g_szKiliseActiveApp)] = { 0 };
+    GetWindowTextW(hwnd, title, _countof(title));
+    if (!title[0])
+        StringCchCopyW(title, _countof(title), L"Application");
+    if (lstrcmpW(g_szKiliseActiveApp, title) || g_hKiliseActiveApp != hwnd)
+    {
+        StringCchCopyW(g_szKiliseActiveApp, _countof(g_szKiliseActiveApp), title);
+        g_hKiliseActiveApp = hwnd;
+        if (g_hKiliseMenuBar) InvalidateRect(g_hKiliseMenuBar, NULL, FALSE);
+    }
+}
+
+static BOOL KiliseShowActiveAppMenu(HWND hwndOwner, UINT index)
+{
+    HMENU menu = g_hKiliseActiveApp ? GetMenu(g_hKiliseActiveApp) : NULL;
+    if (!menu || index >= (UINT)GetMenuItemCount(menu)) return FALSE;
+    HMENU submenu = GetSubMenu(menu, index);
+    if (!submenu) return FALSE;
+    POINT point = { g_MenuBarItems[index + 3].xLeft, 25 };
+    ClientToScreen(hwndOwner, &point);
+    UINT command = TrackPopupMenu(submenu, TPM_RETURNCMD | TPM_LEFTALIGN | TPM_TOPALIGN,
+                                  point.x, point.y, 0, hwndOwner, NULL);
+    if (command) PostMessageW(g_hKiliseActiveApp, WM_COMMAND, command, 0);
+    return TRUE;
+}
 
 static LRESULT CALLBACK KiliseMenuBarWndProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 {
     switch (uMsg)
     {
         case WM_CREATE:
-            SetTimer(hwnd, 1, 5000, NULL);
+            /* Keep the global bar responsive as focus moves between apps. */
+            SetTimer(hwnd, 1, 500, NULL);
             return 0;
 
         case WM_ERASEBKGND:
             return 1;
 
         case WM_TIMER:
+            KiliseUpdateActiveApplication();
             InvalidateRect(hwnd, NULL, FALSE);
             return 0;
 
@@ -598,19 +637,19 @@ static LRESULT CALLBACK KiliseMenuBarWndProc(HWND hwnd, UINT uMsg, WPARAM wParam
                             ShellExecuteW(NULL, L"open", L"explorer.exe", NULL, NULL, SW_SHOWNORMAL);
                             break;
                         case 3:
-                            ShellExecuteW(NULL, L"open", L"notepad.exe", NULL, NULL, SW_SHOWNORMAL);
+                            if (!KiliseShowActiveAppMenu(hwnd, 0)) ShellExecuteW(NULL, L"open", L"notepad.exe", NULL, NULL, SW_SHOWNORMAL);
                             break;
                         case 4:
-                            ShellExecuteW(NULL, L"open", L"mspaint.exe", NULL, NULL, SW_SHOWNORMAL);
+                            if (!KiliseShowActiveAppMenu(hwnd, 1)) ShellExecuteW(NULL, L"open", L"mspaint.exe", NULL, NULL, SW_SHOWNORMAL);
                             break;
                         case 5:
-                            ShellExecuteW(NULL, L"open", L"taskmgr.exe", NULL, NULL, SW_SHOWNORMAL);
+                            if (!KiliseShowActiveAppMenu(hwnd, 2)) ShellExecuteW(NULL, L"open", L"taskmgr.exe", NULL, NULL, SW_SHOWNORMAL);
                             break;
                         case 6:
-                            ShellExecuteW(NULL, L"open", L"cmd.exe", NULL, NULL, SW_SHOWNORMAL);
+                            if (!KiliseShowActiveAppMenu(hwnd, 3)) ShellExecuteW(NULL, L"open", L"cmd.exe", NULL, NULL, SW_SHOWNORMAL);
                             break;
                         case 7:
-                            ShellExecuteW(NULL, L"open", L"calc.exe", NULL, NULL, SW_SHOWNORMAL);
+                            if (!KiliseShowActiveAppMenu(hwnd, 4)) ShellExecuteW(NULL, L"open", L"calc.exe", NULL, NULL, SW_SHOWNORMAL);
                             break;
                     }
                     return 0;
@@ -620,7 +659,7 @@ static LRESULT CALLBACK KiliseMenuBarWndProc(HWND hwnd, UINT uMsg, WPARAM wParam
             /* Right-side status icon clicks */
             if (x >= rc.right - 165 && x <= rc.right - 115)
             {
-                ShellExecuteW(NULL, L"open", L"control.exe", NULL, NULL, SW_SHOWNORMAL);
+                ShellExecuteW(NULL, L"open", L"kilisecontrol.exe", NULL, NULL, SW_SHOWNORMAL);
             }
             else if (x > rc.right - 115)
             {
@@ -702,7 +741,8 @@ static LRESULT CALLBACK KiliseMenuBarWndProc(HWND hwnd, UINT uMsg, WPARAM wParam
                     SelectObject(hdc, g_MenuBarItems[i].bBold ? hBoldFont : hRegFont);
                     SetTextColor(hdc, RGB(28, 30, 38));
                     RECT rcItem = { g_MenuBarItems[i].xLeft, 0, g_MenuBarItems[i].xRight, rc.bottom - 1 };
-                    DrawTextW(hdc, g_MenuBarItems[i].szText, -1, &rcItem, DT_CENTER | DT_VCENTER | DT_SINGLELINE);
+                    LPCWSTR label = (i == 2) ? g_szKiliseActiveApp : g_MenuBarItems[i].szText;
+                    DrawTextW(hdc, label, -1, &rcItem, DT_CENTER | DT_VCENTER | DT_SINGLELINE | DT_END_ELLIPSIS);
                 }
             }
 
