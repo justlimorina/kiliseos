@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" width="256" height="256">
+  <defs>
+    <filter id="subtle-glow" x="-20%" y="-20%" width="140%" height="140%">
+      <feGaussianBlur stdDeviation="3" result="blur"/>
+      <feMerge>
+        <feMergeNode in="blur"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+  </defs>
+
+  <!-- Deep obsidian background (optional display container) -->
+  <rect width="256" height="256" rx="48" fill="#131518"/>
+
+  <!-- kiliseOS Minimalist Globus Cruciger (Option 1 Precision Geometry) -->
+  <g fill="none" stroke="#FFFFFF" stroke-width="10" stroke-linecap="round" stroke-linejoin="round">
+    <!-- Main Globe Orb -->
+    <circle cx="128" cy="150" r="60"/>
+
+    <!-- Equator Band -->
+    <line x1="68" y1="150" x2="188" y2="150"/>
+
+    <!-- Vertical Axis through Globe and Cross Spire -->
+    <line x1="128" y1="210" x2="128" y2="30"/>
+
+    <!-- Cross Horizontal Bar -->
+    <line x1="104" y1="52" x2="152" y2="52"/>
+  </g>
+</svg>
