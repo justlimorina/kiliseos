@@ -223,6 +223,8 @@ struct TaskbarSettings
     BOOL bPreferDate;
     BOOL bHideInactiveIcons;
     BOOL bSmallIcons;
+    BOOL bTaskbarCentered;
+    BOOL bTaskbarIconOnly;
     TrayIconsMode eCompactTrayIcons;
     BOOL bShowDesktopButton;
     TW_STRUCKRECTS2 sr;

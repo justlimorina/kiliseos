@@ -627,7 +627,10 @@ public:
         ASSERT(TaskItem->Index >= 0);
 
         tbbi.cbSize = sizeof(tbbi);
-        tbbi.dwMask = TBIF_BYINDEX | TBIF_STATE | TBIF_TEXT | TBIF_IMAGE;
+        tbbi.dwMask = TBIF_BYINDEX | TBIF_STATE | TBIF_IMAGE;
+        if (!g_TaskbarSettings.bTaskbarIconOnly)
+            tbbi.dwMask |= TBIF_TEXT;
+
         tbbi.fsState = TBSTATE_ENABLED;
         if (m_ActiveTaskItem == TaskItem)
             tbbi.fsState |= TBSTATE_CHECKED;
@@ -643,9 +646,13 @@ public:
             tbbi.fsState |= TBSTATE_WRAP;
         }
 
-        if (GetWndTextFromTaskItem(TaskItem, windowText, _countof(windowText)) > 0)
+        if (!g_TaskbarSettings.bTaskbarIconOnly && GetWndTextFromTaskItem(TaskItem, windowText, _countof(windowText)) > 0)
         {
             tbbi.pszText = windowText;
+        }
+        else
+        {
+            tbbi.pszText = NULL;
         }
 
         icon = GetWndIcon(TaskItem->hWnd);
@@ -803,7 +810,7 @@ public:
         tbBtn.fsStyle = BTNS_CHECK | BTNS_NOPREFIX | BTNS_SHOWTEXT;
         tbBtn.dwData = TaskItem->Index;
 
-        if (GetWndTextFromTaskItem(TaskItem, windowText, _countof(windowText)) > 0)
+        if (!g_TaskbarSettings.bTaskbarIconOnly && GetWndTextFromTaskItem(TaskItem, windowText, _countof(windowText)) > 0)
         {
             tbBtn.iString = (DWORD_PTR) windowText;
         }
@@ -1419,15 +1426,25 @@ public:
                 uiMin = GetSystemMetrics(SM_CXSIZE) + (2 * GetSystemMetrics(SM_CXEDGE));
                 if (Horizontal)
                 {
-                    uiMax = GetSystemMetrics(SM_CXMINIMIZED);
+                    if (g_TaskbarSettings.bTaskbarIconOnly)
+                    {
+                        /* In Icon-only mode, buttons are square / compact (ChromeOS shelf style) */
+                        LONG btnHeight = rcClient.bottom > 0 ? rcClient.bottom : (uiMin + 8);
+                        NewBtnSize = btnHeight;
+                        cxButtonSpacing = 4;
+                    }
+                    else
+                    {
+                        uiMax = GetSystemMetrics(SM_CXMINIMIZED);
 
-                    /* Calculate the ideal width and make sure it's within the allowed range */
-                    NewBtnSize = (rcClient.right - (uiBtnsPerLine * cxButtonSpacing)) / uiBtnsPerLine;
+                        /* Calculate the ideal width and make sure it's within the allowed range */
+                        NewBtnSize = (rcClient.right - (uiBtnsPerLine * cxButtonSpacing)) / uiBtnsPerLine;
 
-                    if (NewBtnSize < (LONG) uiMin)
-                        NewBtnSize = uiMin;
-                    if (NewBtnSize >(LONG)uiMax)
-                        NewBtnSize = uiMax;
+                        if (NewBtnSize < (LONG) uiMin)
+                            NewBtnSize = uiMin;
+                        if (NewBtnSize > (LONG) uiMax)
+                            NewBtnSize = uiMax;
+                    }
 
                     /* Recalculate how many buttons actually fit into one line */
                     uiBtnsPerLine = rcClient.right / (NewBtnSize + cxButtonSpacing);
@@ -1471,11 +1488,35 @@ public:
 
                     m_TaskBar.SetButtonInfo(ui, &tbbi);
                 }
+
+                if (g_TaskbarSettings.bTaskbarCentered && Horizontal)
+                {
+                    LONG TotalBtnsInLine = min((LONG)m_ButtonCount, (LONG)uiBtnsPerLine);
+                    LONG TotalWidth = TotalBtnsInLine * NewBtnSize + (TotalBtnsInLine > 1 ? (TotalBtnsInLine - 1) * cxButtonSpacing : 0);
+                    LONG ScreenWidth = GetSystemMetrics(SM_CXSCREEN);
+                    RECT rcWnd = { 0 };
+                    GetWindowRect(&rcWnd);
+                    LONG ScreenX = (ScreenWidth - TotalWidth) / 2;
+                    LONG OffsetX = ScreenX - rcWnd.left;
+                    if (OffsetX < 0)
+                        OffsetX = 0;
+                    if (OffsetX + TotalWidth > rcClient.right)
+                        OffsetX = max((LONG)0, rcClient.right - TotalWidth);
+
+                    m_TaskBar.SetWindowPos(NULL, OffsetX, 0, rcClient.right - OffsetX, rcClient.bottom, SWP_NOZORDER);
+                    InvalidateRect(NULL, TRUE);
+                }
+                else
+                {
+                    m_TaskBar.SetWindowPos(NULL, 0, 0, rcClient.right, rcClient.bottom, SWP_NOZORDER);
+                }
             }
             else
             {
                 m_ButtonsPerLine = 0;
                 m_ButtonSize.cx = 0;
+                m_TaskBar.SetWindowPos(NULL, 0, 0, rcClient.right, rcClient.bottom, SWP_NOZORDER);
+                InvalidateRect(NULL, TRUE);
             }
         }
 
@@ -1886,6 +1927,36 @@ public:
         return Ret;
     }
 
+    VOID HandleItemPostPaint(IN NMTBCUSTOMDRAW *nmtbcd)
+    {
+        PTASK_ITEM TaskItem = FindTaskItemByIndex((INT)nmtbcd->nmcd.dwItemSpec);
+        if (TaskItem == NULL || !::IsWindow(TaskItem->hWnd))
+            return;
+
+        HDC hdc = nmtbcd->nmcd.hdc;
+        RECT rc = nmtbcd->nmcd.rc;
+
+        BOOL bIsActive = (m_ActiveTaskItem == TaskItem) || (nmtbcd->nmcd.uItemState & CDIS_CHECKED);
+
+        /* Draw ChromeOS-style indicator bar at the bottom of the button */
+        INT pillHeight = 3;
+        INT pillWidth = bIsActive ? 16 : 6;
+        INT pillX = rc.left + ((rc.right - rc.left) - pillWidth) / 2;
+        INT pillY = rc.bottom - pillHeight - 1;
+
+        RECT rcPill = { pillX, pillY, pillX + pillWidth, pillY + pillHeight };
+
+        COLORREF clrPill = bIsActive ? RGB(138, 180, 248) /* MD3 Cyan Accent #8AB4F8 */
+                                     : RGB(154, 160, 166) /* Inactive Slate #9AA0A6 */;
+
+        HBRUSH hBrush = CreateSolidBrush(clrPill);
+        if (hBrush)
+        {
+            FillRect(hdc, &rcPill, hBrush);
+            DeleteObject(hBrush);
+        }
+    }
+
     LRESULT HandleToolbarNotification(IN const NMHDR *nmh)
     {
         LRESULT Ret = 0;
@@ -1901,6 +1972,16 @@ public:
 
             case CDDS_ITEMPREPAINT:
                 Ret = HandleItemPaint(nmtbcd);
+                if (g_TaskbarSettings.bTaskbarIconOnly)
+                    Ret |= CDRF_NOTIFYPOSTPAINT;
+                break;
+
+            case CDDS_ITEMPOSTPAINT:
+                if (g_TaskbarSettings.bTaskbarIconOnly)
+                {
+                    HandleItemPostPaint(nmtbcd);
+                }
+                Ret = CDRF_DODEFAULT;
                 break;
 
             case CDDS_PREPAINT:
@@ -1910,6 +1991,19 @@ public:
             default:
                 Ret = CDRF_DODEFAULT;
                 break;
+            }
+            break;
+        }
+
+        case TTN_GETDISPINFOW:
+        {
+            LPNMTTDISPINFOW pDisp = (LPNMTTDISPINFOW)nmh;
+            PTASK_ITEM pItem = FindTaskItemByIndex((INT)pDisp->hdr.idFrom);
+            if (pItem && ::IsWindow(pItem->hWnd))
+            {
+                GetWndTextFromTaskItem(pItem, pDisp->szText, _countof(pDisp->szText));
+                pDisp->hinst = NULL;
+                return 0;
             }
             break;
         }
@@ -2061,14 +2155,8 @@ public:
 
     LRESULT OnSize(UINT uMsg, WPARAM wParam, LPARAM lParam, BOOL& bHandled)
     {
-        SIZE szClient;
-
-        szClient.cx = LOWORD(lParam);
-        szClient.cy = HIWORD(lParam);
         if (m_TaskBar.m_hWnd != NULL)
         {
-            m_TaskBar.SetWindowPos(NULL, 0, 0, szClient.cx, szClient.cy, SWP_NOZORDER);
-
             UpdateButtonsSize(FALSE);
         }
         return TRUE;
@@ -2196,6 +2284,18 @@ public:
         {
             bSettingsChanged = TRUE;
             g_TaskbarSettings.bSmallIcons = newSettings->bSmallIcons;
+        }
+
+        if (newSettings->bTaskbarCentered != g_TaskbarSettings.bTaskbarCentered)
+        {
+            bSettingsChanged = TRUE;
+            g_TaskbarSettings.bTaskbarCentered = newSettings->bTaskbarCentered;
+        }
+
+        if (newSettings->bTaskbarIconOnly != g_TaskbarSettings.bTaskbarIconOnly)
+        {
+            bSettingsChanged = TRUE;
+            g_TaskbarSettings.bTaskbarIconOnly = newSettings->bTaskbarIconOnly;
         }
 
         if (bSettingsChanged)
