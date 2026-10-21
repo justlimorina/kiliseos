@@ -269,7 +269,7 @@ BEGIN
     IDS_INSTALLATIONSERVERINFO "Sistemul va fi recunoscut ca un server. Folderele private ""Imaginile mele"", ""Videoclipurile mele"" și ""Muzica mea"" vor fi independente de ""Documentele mele""."
     IDS_INSTALLATIONWORKSTATIONNAME "Stație de lucru ReactOS"
     IDS_INSTALLATIONWORKSTATIONINFO "Sistemul va fi recunoscut ca o stație de lucru. Folderele private ""Imaginile mele"", ""Videoclipurile mele"" și ""Muzica mea"" sunt în ""Documentele mele""."
-    IDS_INSTALLATIONSERVERCORENAME "ReactOS Server Core"
+    IDS_INSTALLATIONSERVERCORENAME "kiliseOS Server Core"
     IDS_INSTALLATIONSERVERCOREINFO "The system will be recognized as a server. The graphical shell is not installed, and the system starts in a command-line environment to reduce resource usage and attack surface."
     /* Reserved for future use
      * IDS_INSTALLATIONNANOSERVERNAME "ReactOS Nano Server"

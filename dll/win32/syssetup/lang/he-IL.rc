@@ -130,8 +130,8 @@ STYLE DS_SHELLFONT | DS_MODALFRAME | WS_POPUP | WS_VISIBLE | WS_CAPTION | WS_SYS
 CAPTION "התקנת ReactOS"
 FONT 8, "MS Shell Dlg"
 BEGIN
-    LTEXT "Completing the ReactOS Setup Wizard", IDC_FINISHTITLE, 115, 8, 195, 24
-    LTEXT "You have successfully installed ReactOS.\n\nIf there is a CD in a drive, remove it. To restart your computer, click Finish.", IDC_STATIC, 115, 40, 195, 48
+    LTEXT "Completing the kiliseOS Setup Wizard", IDC_FINISHTITLE, 115, 8, 195, 24
+    LTEXT "You have successfully installed kiliseOS.\n\nIf there is a CD in a drive, remove it. To restart your computer, click Finish.", IDC_STATIC, 115, 40, 195, 48
     LTEXT "Your computer will automatically restart in 15 seconds.", IDC_STATIC, 115, 110, 195, 24
     CONTROL "", IDC_RESTART_PROGRESS, "msctls_progress32", PBS_SMOOTH | WS_CHILD | WS_VISIBLE | WS_BORDER, 115, 135, 188, 12
 END
@@ -179,11 +179,11 @@ BEGIN
     IDS_ACKTITLE "תודות"
     IDS_ACKSUBTITLE "The shoulders ReactOS stands on and license information"
     IDS_OWNERTITLE "Personalize your Software"
-    IDS_OWNERSUBTITLE "Setup uses this information about yourself to personalize ReactOS."
+    IDS_OWNERSUBTITLE "Setup uses this information about yourself to personalize kiliseOS."
     IDS_COMPUTERTITLE "Computer Name and Administrator Password"
     IDS_COMPUTERSUBTITLE "You must provide a name and an Administrator Password for your computer."
     IDS_LOCALETITLE "הגדרות אזור"
-    IDS_LOCALESUBTITLE "You can customize ReactOS for different regions and languages."
+    IDS_LOCALESUBTITLE "You can customize kiliseOS for different regions and languages."
     IDS_LOCALETEXT "The Standards and formats are set to %s, and the location is set to %s."
     IDS_LAYOUTTEXT "Your default text input language and method is: %s keyboard layout"
     IDS_DATETIMETITLE "תאריך ושעה"
@@ -256,11 +256,11 @@ STRINGTABLE
 BEGIN
     IDS_INSTALLATIONTITLE "Installation Type"
     IDS_INSTALLATIONSUBTITLE "Choose an installation type that determines how the system is configured."
-    IDS_INSTALLATIONSERVERNAME "ReactOS Server"
+    IDS_INSTALLATIONSERVERNAME "kiliseOS Server"
     IDS_INSTALLATIONSERVERINFO "The system will be recognized as a server. Private folders ""My Pictures"", ""My Videos"" and ""My Music"" are independent from ""My Documents""."
-    IDS_INSTALLATIONWORKSTATIONNAME "ReactOS Workstation"
+    IDS_INSTALLATIONWORKSTATIONNAME "kiliseOS Workstation"
     IDS_INSTALLATIONWORKSTATIONINFO "The system will be recognized as a workstation. Private folders ""My Pictures"", ""My Videos"" and ""My Music"" are in ""My Documents""."
-    IDS_INSTALLATIONSERVERCORENAME "ReactOS Server Core"
+    IDS_INSTALLATIONSERVERCORENAME "kiliseOS Server Core"
     IDS_INSTALLATIONSERVERCOREINFO "The system will be recognized as a server. The graphical shell is not installed, and the system starts in a command-line environment to reduce resource usage and attack surface."
     /* Reserved for future use
      * IDS_INSTALLATIONNANOSERVERNAME "ReactOS Nano Server"

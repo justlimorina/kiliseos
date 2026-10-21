@@ -545,7 +545,7 @@ FONT 8, "MS Shell Dlg"
 BEGIN
     ICON "", 1000, 5, 7, 21, 20
     LTEXT "Tento disk alebo zariadenie obsahuje viac ako len jeden typ obsahu.", 1001, 32, 7, 191, 20
-    LTEXT "What do you want ReactOS to do?", 1002, 32, 31, 188, 8
+    LTEXT "What do you want kiliseOS to do?", 1002, 32, 31, 188, 8
     CONTROL "", 1003, "SYSLISTVIEW32", WS_BORDER | WS_TABSTOP | 0x0000C04D, 32, 43, 188, 139
     DEFPUSHBUTTON "OK", IDOK, 96, 186, 60, 14
     PUSHBUTTON "Zrušiť", IDCANCEL, 160, 186, 60, 14
@@ -557,7 +557,7 @@ CAPTION "Zmiešaný obsah"
 FONT 8, "MS Shell Dlg"
 BEGIN
     ICON "", 1000, 5, 7, 21, 20
-    LTEXT "ReactOS can perform the same action each time you insert a disk or connect a device with this kind of file:", 1001, 30, 7, 193, 20
+    LTEXT "kiliseOS can perform the same action each time you insert a disk or connect a device with this kind of file:", 1001, 30, 7, 193, 20
     ICON "", 1005, 32, 27, 11, 10, SS_REALSIZECONTROL
     EDITTEXT 1006, 49, 28, 177, 14, ES_AUTOHSCROLL | ES_READONLY | NOT WS_BORDER | NOT WS_TABSTOP
     LTEXT "Čo má systém ReactOS urobiť?", 1002, 32, 41, 190, 8
@@ -573,7 +573,7 @@ CAPTION "Automatické prehrávanie"
 FONT 8, "MS Shell Dlg"
 BEGIN
     ICON "", 1000, 5, 7, 21, 20
-    LTEXT "ReactOS can perform the same action each time you connect this device.", 1001, 32, 7, 190, 22
+    LTEXT "kiliseOS can perform the same action each time you connect this device.", 1001, 32, 7, 190, 22
     LTEXT "Čo má systém ReactOS &urobiť?", 1002, 32, 31, 190, 8
     CONTROL "", 1003, "SYSLISTVIEW32", WS_BORDER | WS_TABSTOP | 0x0000C04D, 32, 43, 187, 96
     AUTOCHECKBOX "&Vždy vykonať zvolenú akciu.", 1004, 32, 143, 190, 8

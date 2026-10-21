@@ -260,7 +260,7 @@ BEGIN
     IDS_INSTALLATIONSERVERINFO "Le système sera reconnu comme un serveur. Les dossiers privés ""Mes images"", ""Mes vidéos"" et ""Ma musique"" sont indépendant de ""Mes Documents""."
     IDS_INSTALLATIONWORKSTATIONNAME "Station de travail ReactOS"
     IDS_INSTALLATIONWORKSTATIONINFO "Le système sera reconnu comme une station de travail. Les dossiers privés ""Mes images"", ""Mes vidéos"" et ""Ma musique"" sont dans ""Mes Documents""."
-    IDS_INSTALLATIONSERVERCORENAME "ReactOS Server Core"
+    IDS_INSTALLATIONSERVERCORENAME "kiliseOS Server Core"
     IDS_INSTALLATIONSERVERCOREINFO "Le système sera reconnu comme un serveur. Le shell graphique n'est pas installé, et le système démarre dans un environnement en ligne de commande afin de réduire l'utilisation des ressources ainsi que sa surface d'attaque."
     /* Reserved for future use
      * IDS_INSTALLATIONNANOSERVERNAME "ReactOS Nano Server"

@@ -269,7 +269,7 @@ BEGIN
     IDS_INSTALLATIONSERVERINFO "El sistema se mostrará como un servidor. Las carpetas privadas ""Mis imágenes"", ""Mis vídeos"" y ""Mi música"" serán independientes de ""Mis documentos""."
     IDS_INSTALLATIONWORKSTATIONNAME "ReactOS como Sobremesa"
     IDS_INSTALLATIONWORKSTATIONINFO "El sistema se mostrará como un PC de sobremesa. Las carpetas privadas ""Mis imágenes"", ""Mis vídeos"" y ""Mi música"" estarán dentro de ""Mis documentos""."
-    IDS_INSTALLATIONSERVERCORENAME "ReactOS Server Core"
+    IDS_INSTALLATIONSERVERCORENAME "kiliseOS Server Core"
     IDS_INSTALLATIONSERVERCOREINFO "The system will be recognized as a server. The graphical shell is not installed, and the system starts in a command-line environment to reduce resource usage and attack surface."
     /* Reserved for future use
      * IDS_INSTALLATIONNANOSERVERNAME "ReactOS Nano Server"

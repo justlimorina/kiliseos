@@ -268,7 +268,7 @@ BEGIN
     IDS_INSTALLATIONSERVERINFO "Система будет распознаваться как сервер. Приватные папки ""Мои Изображения"", ""Мои видеозаписи"" и ""Моя музыка"" не будут зависеть от папки ""Мои документы""."
     IDS_INSTALLATIONWORKSTATIONNAME "Рабочая станция ReactOS"
     IDS_INSTALLATIONWORKSTATIONINFO "Система будет распознаваться как рабочая станция. Приватные папки ""Мои изображения"", ""Мои видеозаписи"" и ""Моя музыка"" будут находиться в папке ""Мои документы""."
-    IDS_INSTALLATIONSERVERCORENAME "ReactOS Server Core"
+    IDS_INSTALLATIONSERVERCORENAME "kiliseOS Server Core"
     IDS_INSTALLATIONSERVERCOREINFO "Система будет распознаваться как сервер. Графическая оболочка не будет установлена, и система будет запускаться в режиме окружения командной строки с целью уменьшения использования ресурсов компьютера и вероятности хакерских атак."
     /* Reserved for future use
      * IDS_INSTALLATIONNANOSERVERNAME "ReactOS Nano Server"

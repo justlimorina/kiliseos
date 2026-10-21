@@ -267,7 +267,7 @@ BEGIN
     IDS_INSTALLATIONSERVERINFO "Sistema zerbitzari gisa agertuko da. ""Nire irudiak"", ""Nire bideoak"" y ""Nire musika"" karpetak ""Nire Dokumentoak"" independienteki izango dira."
     IDS_INSTALLATIONWORKSTATIONNAME "ReactOS Mahaigain gisa"
     IDS_INSTALLATIONWORKSTATIONINFO "Sistema mahaigain gisa agertuko da. ""Nire irudiak"", ""Nire bideoak"" y ""Nire musika"" karpetak ""Nire Dokumentoak"" barruan egongo dira."
-    IDS_INSTALLATIONSERVERCORENAME "ReactOS Server Core"
+    IDS_INSTALLATIONSERVERCORENAME "kiliseOS Server Core"
     IDS_INSTALLATIONSERVERCOREINFO "The system will be recognized as a server. The graphical shell is not installed, and the system starts in a command-line environment to reduce resource usage and attack surface."
     /* Reserved for future use
      * IDS_INSTALLATIONNANOSERVERNAME "ReactOS Nano Server"

@@ -15,7 +15,7 @@ STYLE DS_SHELLFONT | WS_CHILD
 FONT 9, "新細明體"
 BEGIN
     LTEXT "歡迎使用 ReactOS 安裝程式精靈", IDC_STARTTITLE, 115, 8, 195, 24
-    LTEXT "This wizard will install or upgrade ReactOS on your computer, \
+    LTEXT "This wizard will install or upgrade kiliseOS on your computer, \
 and prepare the second part of the setup.", IDC_STATIC, 115, 40, 195, 27
 ////
     GROUPBOX " IMPORTANT INFORMATION ", IDC_WARNTEXT1, 115, 70, 200, 90, BS_CENTER
@@ -111,7 +111,7 @@ STYLE DS_SHELLFONT | DS_MODALFRAME | DS_CENTER | WS_POPUP | WS_CAPTION | WS_SYSM
 CAPTION "Advanced Installation Options"
 FONT 9, "新細明體"
 BEGIN
-    LTEXT "Choose the &directory where you want to install ReactOS:", IDC_STATIC, 7, 9, 291, 10
+    LTEXT "Choose the &directory where you want to install kiliseOS:", IDC_STATIC, 7, 9, 291, 10
     EDITTEXT IDC_PATH, 7, 23, 291, 13
     GROUPBOX "Bootloader", IDC_STATIC, 7, 45, 291, 60
     LTEXT "Select the location where the FreeLoader\nbootloader should be installed.\n\nBy default, it is installed on the system partition of the boot disk (and either in the Master or the Volume Boot Record for BIOS-based computers).", IDC_STATIC, 13, 57, 279, 44
@@ -171,7 +171,7 @@ STYLE DS_SHELLFONT | WS_CHILD
 FONT 8, "MS Shell Dlg"
 BEGIN
     LTEXT "The ReactOS Setup Wizard ended prematurely", IDC_FINISHTITLE, 115, 8, 195, 24
-    LTEXT "The first ReactOS installation step prematurely ended because of an error or because you have canceled it.\n\nYou will be able to run the Setup Wizard at a later time to install or upgrade ReactOS.", IDC_STATIC, 115, 40, 195, 48
+    LTEXT "The first ReactOS installation step prematurely ended because of an error or because you have canceled it.\n\nYou will be able to run the Setup Wizard at a later time to install or upgrade kiliseOS.", IDC_STATIC, 115, 40, 195, 48
     // The following text can be replaced by IDS_ABORT_NO_REBOOT at runtime;
     // please ensure it can hold in the text control!
     LTEXT "Your computer will automatically restart in 15 seconds or when you click on Restart.", IDC_FINISHTEXT, 115, 110, 195, 24
@@ -184,9 +184,9 @@ STRINGTABLE
 BEGIN
     IDS_CAPTION "ReactOS 安裝程式"
     IDS_TYPETITLE "Installation Type"
-    IDS_TYPESUBTITLE "You can setup a new ReactOS installation, or update/repair an existing installation."
-    IDS_UPDATETITLE "Update or Repair ReactOS"
-    IDS_UPDATESUBTITLE "Choose which existing ReactOS installation you want to update or repair."
+    IDS_TYPESUBTITLE "You can setup a new kiliseOS installation, or update/repair an existing installation."
+    IDS_UPDATETITLE "Update or Repair kiliseOS"
+    IDS_UPDATESUBTITLE "Choose which existing kiliseOS installation you want to update or repair."
     IDS_DEVICETITLE "設定基本裝置"
     IDS_DEVICESUBTITLE "指定顯示和鍵盤設定。"
     IDS_DRIVETITLE "設定安裝磁碟區和系統資料夾"
@@ -295,7 +295,7 @@ and only contain letters, digits, dashes and periods. Spaces are not allowed."
 
     IDS_ERROR_SYSTEM_PARTITION "The ReactOS Setup could not find a supported system partition\n\
 on your system or could not create a new one. Without such a partition\n\
-the Setup program cannot install ReactOS.\
+the Setup program cannot install kiliseOS.\
 \nClick on OK to return to the partition selection list."
 
     IDS_ERROR_FORMAT_UNRECOGNIZED_VOLUME "Unrecognized volume while attempting to format the partition."

@@ -329,7 +329,7 @@ BEGIN
     BEGIN
         MENUITEM "Help-onderwerpen", IDM_HELP_HELP
         MENUITEM SEPARATOR
-        MENUITEM "Over ReactOS Calc", IDM_HELP_ABOUT
+        MENUITEM "Over kiliseOS Calc", IDM_HELP_ABOUT
     END
 END
 
@@ -362,7 +362,7 @@ BEGIN
     BEGIN
         MENUITEM "Help-onderwerpen", IDM_HELP_HELP
         MENUITEM SEPARATOR
-        MENUITEM "Over ReactOS Calc", IDM_HELP_ABOUT
+        MENUITEM "Over kiliseOS Calc", IDM_HELP_ABOUT
     END
 END
 
@@ -385,7 +385,7 @@ BEGIN
     BEGIN
         MENUITEM "Help-onderwerpen", IDM_HELP_HELP
         MENUITEM SEPARATOR
-        MENUITEM "Over ReactOS Calc", IDM_HELP_ABOUT
+        MENUITEM "Over kiliseOS Calc", IDM_HELP_ABOUT
     END
 END
 

@@ -159,7 +159,7 @@ STYLE DS_SHELLFONT | WS_CHILD
 FONT 8, "MS Shell Dlg"
 BEGIN
     LTEXT "The ReactOS Setup Wizard ended prematurely", IDC_FINISHTITLE, 115, 8, 195, 24
-    LTEXT "The first ReactOS installation step prematurely ended because of an error or because you have canceled it.\n\nYou will be able to run the Setup Wizard at a later time to install or upgrade ReactOS.", IDC_STATIC, 115, 40, 195, 48
+    LTEXT "The first ReactOS installation step prematurely ended because of an error or because you have canceled it.\n\nYou will be able to run the Setup Wizard at a later time to install or upgrade kiliseOS.", IDC_STATIC, 115, 40, 195, 48
     // The following text can be replaced by IDS_ABORT_NO_REBOOT at runtime;
     // please ensure it can hold in the text control!
     LTEXT "Your computer will automatically restart in 15 seconds or when you click on Restart.", IDC_FINISHTEXT, 115, 110, 195, 24

@@ -260,7 +260,7 @@ BEGIN
     IDS_INSTALLATIONSERVERINFO "A rendszer szerverként lesz felismerhető. A ""Képek"", ""Videók"" és ""Zenék"" személyes mappák függetlenek lesznek a ""Dokumentumok"" mappától."
     IDS_INSTALLATIONWORKSTATIONNAME "ReactOS Munkaállomás"
     IDS_INSTALLATIONWORKSTATIONINFO "A rendszer munkaállomásként lesz felismerhető. A ""Képek"", ""Videók"" és ""Zenék"" személyes mappák a ""Dokumentumok"" mappában lesznek."
-    IDS_INSTALLATIONSERVERCORENAME "ReactOS Server Core"
+    IDS_INSTALLATIONSERVERCORENAME "kiliseOS Server Core"
     IDS_INSTALLATIONSERVERCOREINFO "The system will be recognized as a server. The graphical shell is not installed, and the system starts in a command-line environment to reduce resource usage and attack surface."
     /* Reserved for future use
      * IDS_INSTALLATIONNANOSERVERNAME "ReactOS Nano Server"

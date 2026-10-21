@@ -263,11 +263,11 @@ STRINGTABLE
 BEGIN
     IDS_INSTALLATIONTITLE "Opcije proizvoda"
     IDS_INSTALLATIONSUBTITLE "Možete odabrati opciju proizvoda koja utječe na ponašanje sustava."
-    IDS_INSTALLATIONSERVERNAME "ReactOS Server"
+    IDS_INSTALLATIONSERVERNAME "kiliseOS Server"
     IDS_INSTALLATIONSERVERINFO "Sustav će biti prepoznat kao server. Privatne mape su: ""My Pictures"", ""My Videos"" i ""My Music"" koji su neovisni od mape ""My Documents""."
-    IDS_INSTALLATIONWORKSTATIONNAME "ReactOS Workstation"
+    IDS_INSTALLATIONWORKSTATIONNAME "kiliseOS Workstation"
     IDS_INSTALLATIONWORKSTATIONINFO "Sustav će biti prepoznat kao radna stanica - workstation. Privatne mape su: ""My Pictures"", ""My Videos"" i ""My Music"" koji su u mapi ""My Documents""."
-    IDS_INSTALLATIONSERVERCORENAME "ReactOS Server Core"
+    IDS_INSTALLATIONSERVERCORENAME "kiliseOS Server Core"
     IDS_INSTALLATIONSERVERCOREINFO "The system will be recognized as a server. The graphical shell is not installed, and the system starts in a command-line environment to reduce resource usage and attack surface."
     /* Reserved for future use
      * IDS_INSTALLATIONNANOSERVERNAME "ReactOS Nano Server"

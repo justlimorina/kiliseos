@@ -35,11 +35,11 @@ STRINGTABLE
 {
 5000, "Lunar"
 5001, "Style Visuel"
-5002, "Projet ReactOS"
+5002, "Projet kiliseOS"
 5003, "Cernodile & Illen, basé sur Lautus"
 5004, "Distribué sous GNU/GPL 2.0, 2019"
-5005, "https://reactos.org/"
+5005, "https://github.com/justlimorina/kiliseos"
 5006, "1.1"
-5007, "Style Visuel pour ReactOS"
+5007, "Style Visuel pour kiliseOS"
 }
 
