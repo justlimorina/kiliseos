@@ -411,7 +411,7 @@ GetSystemVersionString(OUT PWSTR pwszzVersion,
                                      (VerInfo.dwBuildNumber & 0xFFFF),
                                      VersionBuffer);
 
-        if (AppendNtSystemRoot && NT_SUCCESS(Status))
+        if (FALSE && AppendNtSystemRoot && NT_SUCCESS(Status))
         {
             Status = RtlStringCbPrintfW(VersionBuffer,
                                         sizeof(VersionBuffer),
@@ -453,7 +453,7 @@ GetSystemVersionString(OUT PWSTR pwszzVersion,
                                      (VerInfo.dwBuildNumber & 0xFFFF),
                                      VersionBuffer);
 
-        if (AppendNtSystemRoot && NT_SUCCESS(Status))
+        if (FALSE && AppendNtSystemRoot && NT_SUCCESS(Status))
         {
             Status = RtlStringCbPrintfW(VersionBuffer,
                                         sizeof(VersionBuffer),
