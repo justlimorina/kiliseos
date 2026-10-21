@@ -55,6 +55,7 @@ class CTrayClockWnd :
     RECT rcText;
     SYSTEMTIME LocalTime;
     CTooltips m_tooltip;
+    BOOL m_bHover;
 
     union
     {
@@ -101,6 +102,9 @@ private:
     LRESULT OnSize(UINT uMsg, WPARAM wParam, LPARAM lParam, BOOL& bHandled);
     LRESULT OnTaskbarSettingsChanged(UINT uMsg, WPARAM wParam, LPARAM lParam, BOOL& bHandled);
     LRESULT OnLButtonDblClick(UINT uMsg, WPARAM wParam, LPARAM lParam, BOOL& bHandled);
+    LRESULT OnMouseMove(UINT uMsg, WPARAM wParam, LPARAM lParam, BOOL& bHandled);
+    LRESULT OnMouseLeave(UINT uMsg, WPARAM wParam, LPARAM lParam, BOOL& bHandled);
+    LRESULT OnLButtonUp(UINT uMsg, WPARAM wParam, LPARAM lParam, BOOL& bHandled);
     VOID PaintLine(IN HDC hDC, IN OUT RECT *rcClient, IN UINT LineNumber, IN UINT szLinesIndex);
 
 public:
@@ -143,6 +147,9 @@ public:
         MESSAGE_HANDLER(WM_SETFONT, OnSetFont)
         MESSAGE_HANDLER(TNWM_GETMINIMUMSIZE, OnGetMinimumSize)
         MESSAGE_HANDLER(TWM_SETTINGSCHANGED, OnTaskbarSettingsChanged)
+        MESSAGE_HANDLER(WM_MOUSEMOVE, OnMouseMove)
+        MESSAGE_HANDLER(WM_MOUSELEAVE, OnMouseLeave)
+        MESSAGE_HANDLER(WM_LBUTTONUP, OnLButtonUp)
         MESSAGE_HANDLER(WM_LBUTTONDBLCLK, OnLButtonDblClick)
     END_MSG_MAP()
 
@@ -152,12 +159,13 @@ public:
 #define ID_TRAYCLOCK_TIMER  0
 #define ID_TRAYCLOCK_TIMER_INIT 1
 
-#define TRAY_CLOCK_WND_SPACING_X    5
+#define TRAY_CLOCK_WND_SPACING_X    10
 #define TRAY_CLOCK_WND_SPACING_Y    0
 
 CTrayClockWnd::CTrayClockWnd() :
         hFont(NULL),
         textColor(0),
+        m_bHover(FALSE),
         dwFlags(0),
         LineSpacing(0),
         VisibleLines(0)
@@ -528,12 +536,24 @@ LRESULT CTrayClockWnd::OnPaint(UINT uMsg, WPARAM wParam, LPARAM lParam, BOOL& bH
     if (LinesMeasured &&
         GetClientRect(&rcClient))
     {
+        /* Draw modern ChromeOS / MD3 Status Pill */
+        RECT rcPill = rcClient;
+        InflateRect(&rcPill, -2, -3);
+
+        HBRUSH hPillBrush = CreateSolidBrush(m_bHover ? RGB(45, 50, 56) : RGB(25, 28, 30));
+        HPEN hPillPen = CreatePen(PS_SOLID, 1, m_bHover ? RGB(74, 82, 92) : RGB(45, 50, 56));
+        HBRUSH hOldBrush = (HBRUSH)SelectObject(hDC, hPillBrush);
+        HPEN hOldPen = (HPEN)SelectObject(hDC, hPillPen);
+
+        RoundRect(hDC, rcPill.left, rcPill.top, rcPill.right, rcPill.bottom, 12, 12);
+
+        SelectObject(hDC, hOldBrush);
+        SelectObject(hDC, hOldPen);
+        DeleteObject(hPillBrush);
+        DeleteObject(hPillPen);
+
         iPrevBkMode = SetBkMode(hDC, TRANSPARENT);
-
-        if (!IsAppThemed())
-            textColor = ::GetSysColor(COLOR_BTNTEXT);
-
-        ::SetTextColor(hDC, textColor);
+        ::SetTextColor(hDC, RGB(240, 244, 248));
 
         hPrevFont = (HFONT) SelectObject(hDC, hFont);
 
@@ -574,11 +594,10 @@ VOID CTrayClockWnd::PaintLine(IN HDC hDC, IN OUT RECT *rcClient, IN UINT LineNum
     if (LineSizes[LineNumber].cx == 0)
         return;
 
-    INT HShift = ((IsHorizontal && (VisibleLines <= 1 ||
-                   g_TaskbarSettings.UseCompactTrayIcons())) ? 0 : TRAY_CLOCK_WND_SPACING_X);
+    INT x = (rcClient->right + rcClient->left - LineSizes[szLinesIndex].cx) / 2;
 
     TextOut(hDC,
-            ((rcClient->right - LineSizes[szLinesIndex].cx) / 2) + HShift,
+            x,
             rcClient->top + TRAY_CLOCK_WND_SPACING_Y,
             szLines[szLinesIndex],
             wcslen(szLines[szLinesIndex]));
@@ -748,6 +767,34 @@ LRESULT CTrayClockWnd::OnTaskbarSettingsChanged(UINT uMsg, WPARAM wParam, LPARAM
         Update();
     }
     return 0;
+}
+
+LRESULT CTrayClockWnd::OnMouseMove(UINT uMsg, WPARAM wParam, LPARAM lParam, BOOL& bHandled)
+{
+    if (!m_bHover)
+    {
+        m_bHover = TRUE;
+        TRACKMOUSEEVENT tme;
+        tme.cbSize = sizeof(tme);
+        tme.dwFlags = TME_LEAVE;
+        tme.hwndTrack = m_hWnd;
+        TrackMouseEvent(&tme);
+        InvalidateRect(NULL, FALSE);
+    }
+    return 0;
+}
+
+LRESULT CTrayClockWnd::OnMouseLeave(UINT uMsg, WPARAM wParam, LPARAM lParam, BOOL& bHandled)
+{
+    m_bHover = FALSE;
+    InvalidateRect(NULL, FALSE);
+    return 0;
+}
+
+LRESULT CTrayClockWnd::OnLButtonUp(UINT uMsg, WPARAM wParam, LPARAM lParam, BOOL& bHandled)
+{
+    g_QuickSettingsWnd.Toggle(m_hWnd);
+    return TRUE;
 }
 
 LRESULT CTrayClockWnd::OnLButtonDblClick(UINT uMsg, WPARAM wParam, LPARAM lParam, BOOL& bHandled)
