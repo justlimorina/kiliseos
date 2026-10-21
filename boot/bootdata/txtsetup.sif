@@ -677,7 +677,7 @@ DelReg = registry.inf,DelReg
 AddReg = registry.inf,AddReg
 
 [Strings]
-cdname      = "ReactOS Installation Media"
-productname = "ReactOS"
+cdname      = "kiliseOS Installation Media"
+productname = "kiliseOS"
 
 ; EOF
