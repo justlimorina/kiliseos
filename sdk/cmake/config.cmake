@@ -49,7 +49,7 @@ elseif(ARCH STREQUAL "arm64")
     "Which CPU ReactOS should be optimized for.")
 endif()
 
-set(OPTIMIZE "5" CACHE STRING
+set(OPTIMIZE "4" CACHE STRING
 "What level of optimization to use.
  0 = Off
  1 = Optimize for size (-Os) with some additional options

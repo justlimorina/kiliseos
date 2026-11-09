@@ -18,6 +18,10 @@
 
 #pragma once
 
+#ifndef ARRAY_SIZE
+#define ARRAY_SIZE(x) (sizeof(x) / sizeof((x)[0]))
+#endif
+
 extern HRESULT MMDevEnum_Create(REFIID riid, void **ppv) DECLSPEC_HIDDEN;
 extern void MMDevEnum_Free(void) DECLSPEC_HIDDEN;
 

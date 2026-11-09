@@ -33,10 +33,12 @@
 #include "dshow.h"
 #include "dsound.h"
 #include "audioclient.h"
+#define IID_IKsControl IID_IKsControl_dup
 #include "endpointvolume.h"
 #include "audiopolicy.h"
 
 #include "mmdevapi.h"
+#undef IID_IKsControl
 #include "devpkey.h"
 
 WINE_DEFAULT_DEBUG_CHANNEL(mmdevapi);

@@ -7,6 +7,8 @@
 
 #pragma once
 
+#include <mmsystem.h>
+
 #define IDC_QS_TRACKBAR_VOL   2001
 #define IDC_QS_BTN_LOCK       2002
 #define IDC_QS_BTN_SETTINGS   2003
@@ -348,7 +350,7 @@ public:
             HWND hwndTray = FindWindowW(L"Shell_TrayWnd", NULL);
             if (hwndTray)
             {
-                PostMessageW(hwndTray, TWM_DOEXITWINDOWS, 0, 0);
+                ::PostMessageW(hwndTray, TWM_DOEXITWINDOWS, 0, 0);
             }
             break;
         }
