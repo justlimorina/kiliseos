@@ -168,7 +168,7 @@ endif()
 add_compile_options(-march=${OARCH} -mtune=${TUNE})
 
 # Warnings, errors
-add_compile_options(-Wall -Wpointer-arith -Wno-error)
+add_compile_options(-Wall -Wpointer-arith -Wno-error -fpermissive)
 
 # Disable some overzealous warnings
 add_compile_options(
