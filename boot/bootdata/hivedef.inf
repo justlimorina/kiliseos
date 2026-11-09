@@ -67,9 +67,9 @@ HKCU,"Control Panel\Desktop","Pattern",2,"(None)"
 HKCU,"Control Panel\Desktop","Wallpaper",0x00000002,""
 HKCU,"Control Panel\Desktop","TileWallpaper",2,"0"
 HKCU,"Control Panel\Desktop","WallpaperStyle",2,"2"
-HKCU,"Control Panel\Desktop","FontSmoothing",2,"0"
+HKCU,"Control Panel\Desktop","FontSmoothing",2,"2"
 HKCU,"Control Panel\Desktop","FontSmoothingOrientation",0x00010003,0x00000001
-HKCU,"Control Panel\Desktop","FontSmoothingType",0x00010003,0x00000001
+HKCU,"Control Panel\Desktop","FontSmoothingType",0x00010003,0x00000002
 HKCU,"Control Panel\Desktop","ForegroundFlashCount",0x00010003,0x00000003
 HKCU,"Control Panel\Desktop","ForegroundLockTimeout",0x00010003,0x00030d40
 HKCU,"Control Panel\Desktop","GridGranularity",2,"0"
@@ -1915,6 +1915,17 @@ HKCU,"SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\ComDlg32\OpenSaveMRU",,
 ; Default shell for the current user (overrides the defaults from the HKLM Winlogon sub-key)
 HKCU,"SOFTWARE\Microsoft\Windows NT\CurrentVersion\Winlogon",,0x00000012
 ;HKCU,"SOFTWARE\Microsoft\Windows NT\CurrentVersion\Winlogon","Shell",0x00020000,"%SystemRoot%\explorer.exe"
+
+; Default Visual Style (kiliseOS Modern Dark)
+HKCU,"SOFTWARE\Microsoft\Windows\CurrentVersion\ThemeManager",,0x00000012
+HKCU,"SOFTWARE\Microsoft\Windows\CurrentVersion\ThemeManager","ThemeActive",2,"1"
+HKCU,"SOFTWARE\Microsoft\Windows\CurrentVersion\ThemeManager","DllName",0x00020000,"%SystemRoot%\Resources\Themes\Modern\modern.msstyles"
+HKCU,"SOFTWARE\Microsoft\Windows\CurrentVersion\ThemeManager","ColorName",2,"Dark"
+HKCU,"SOFTWARE\Microsoft\Windows\CurrentVersion\ThemeManager","SizeName",2,"Regular Fonts"
+
+; WineD3D configuration
+HKCU,"SOFTWARE\Wine\Direct3D","DirectDrawRenderer",2,"opengl"
+HKCU,"SOFTWARE\Wine\Direct3D","VideoMemorySize",2,"256"
 
 HKCU,"SOFTWARE\Microsoft\Windows\CurrentVersion\Policies",,0x00000012
 HKCU,"SOFTWARE\Microsoft\Windows\CurrentVersion\Policies\Explorer",,0x00000012
