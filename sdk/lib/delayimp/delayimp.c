@@ -76,6 +76,8 @@ __delayLoadHelper2(PCImgDelayDescr pidd, PImgThunkData pIATEntry)
         dli.pfnCur = __pfnDliNotifyHook2(dliStartProcessing, &dli);
         if (dli.pfnCur)
         {
+            DWORD dwOldProtect;
+            VirtualProtect(&pIAT[index].u1.Function, sizeof(DWORD_PTR), PAGE_READWRITE, &dwOldProtect);
             pIAT[index].u1.Function = (DWORD_PTR)dli.pfnCur;
             if (__pfnDliNotifyHook2)
                 __pfnDliNotifyHook2(dliNoteEndProcessing, &dli);
@@ -88,6 +90,7 @@ __delayLoadHelper2(PCImgDelayDescr pidd, PImgThunkData pIATEntry)
 
     if (dli.hmodCur == NULL)
     {
+        DWORD dwOldProtect;
         if (__pfnDliNotifyHook2)
             dli.hmodCur = (HMODULE)__pfnDliNotifyHook2(dliNotePreLoadLibrary, &dli);
         if (dli.hmodCur == NULL)
@@ -109,6 +112,7 @@ __delayLoadHelper2(PCImgDelayDescr pidd, PImgThunkData pIATEntry)
                 }
             }
         }
+        VirtualProtect(phMod, sizeof(HMODULE), PAGE_READWRITE, &dwOldProtect);
         *phMod = dli.hmodCur;
     }
 
@@ -136,7 +140,11 @@ __delayLoadHelper2(PCImgDelayDescr pidd, PImgThunkData pIATEntry)
         }
     }
 
-    pIAT[index].u1.Function = (DWORD_PTR)dli.pfnCur;
+    {
+        DWORD dwOldProtect;
+        VirtualProtect(&pIAT[index].u1.Function, sizeof(DWORD_PTR), PAGE_READWRITE, &dwOldProtect);
+        pIAT[index].u1.Function = (DWORD_PTR)dli.pfnCur;
+    }
     dli.dwLastError = ERROR_SUCCESS;
 
     if (__pfnDliNotifyHook2)

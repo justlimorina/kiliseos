@@ -186,12 +186,14 @@ class CStartButton
     SIZE       m_Size;
     HFONT      m_Font;
     BOOL       m_bHover;
+    BOOL       m_bPressed;
 
 public:
     CStartButton()
         : m_ImageList(NULL),
           m_Font(NULL),
-          m_bHover(FALSE)
+          m_bHover(FALSE),
+          m_bPressed(FALSE)
     {
         m_Size.cx = 0;
         m_Size.cy = 0;
@@ -229,8 +231,6 @@ public:
 
         ncm.lfCaptionFont.lfWeight = FW_BOLD;
         m_Font = CreateFontIndirect(&ncm.lfCaptionFont);
-
-        SetFont(m_Font, FALSE);
     }
 
     VOID Initialize()
@@ -241,36 +241,18 @@ public:
         SubclassWindow(hWnd);
 
         SetWindowTheme(m_hWnd, L"Start", NULL);
-
-        m_ImageList = ImageList_LoadImageW(hExplorerInstance,
-                                           MAKEINTRESOURCEW(IDB_START),
-                                           0, 0, 0,
-                                           IMAGE_BITMAP,
-                                           LR_LOADTRANSPARENT | LR_CREATEDIBSECTION);
-
-        BUTTON_IMAGELIST bil = {m_ImageList, {1,1,1,1}, BUTTON_IMAGELIST_ALIGN_LEFT};
-        SendMessageW(BCM_SETIMAGELIST, 0, (LPARAM) &bil);
         UpdateSize();
     }
 
     HWND Create(HWND hwndParent)
     {
-        WCHAR szStartCaption[32];
-        if (!LoadStringW(hExplorerInstance,
-                         IDS_START,
-                         szStartCaption,
-                         _countof(szStartCaption)))
-        {
-            wcscpy(szStartCaption, L"Start");
-        }
-
         DWORD dwStyle = WS_CHILD | WS_VISIBLE | WS_CLIPSIBLINGS | BS_PUSHBUTTON | BS_LEFT | BS_VCENTER;
 
         // HACK & FIXME: CORE-18016
         m_hWnd = CreateWindowEx(
             0,
             WC_BUTTON,
-            szStartCaption,
+            L"",
             dwStyle,
             0, 0, 0, 0,
             hwndParent,
@@ -300,11 +282,17 @@ public:
         GetClientRect(&rcClient);
 
         if (IsAppThemed())
+        {
             DrawThemeParentBackground(m_hWnd, hdc, &rcClient);
+        }
         else
-            FillRect(hdc, &rcClient, GetSysColorBrush(COLOR_3DFACE));
+        {
+            HBRUSH hShelfBg = CreateSolidBrush(RGB(25, 28, 30));
+            FillRect(hdc, &rcClient, hShelfBg);
+            DeleteObject(hShelfBg);
+        }
 
-        BOOL bPushed = (DefWindowProcW(BM_GETSTATE, 0, 0) & BST_PUSHED) != 0;
+        BOOL bPushed = m_bPressed || ((DefWindowProcW(BM_GETSTATE, 0, 0) & BST_PUSHED) != 0);
 
         RECT rcPill = rcClient;
         InflateRect(&rcPill, -2, -1);
@@ -375,9 +363,15 @@ public:
 
     LRESULT OnSetState(UINT uMsg, WPARAM wParam, LPARAM lParam, BOOL& bHandled)
     {
-        LRESULT lRes = DefWindowProcW(uMsg, wParam, lParam);
+        m_bPressed = (wParam != 0);
         InvalidateRect(NULL, FALSE);
-        return lRes;
+        return 0;
+    }
+
+    LRESULT OnFocusChange(UINT uMsg, WPARAM wParam, LPARAM lParam, BOOL& bHandled)
+    {
+        InvalidateRect(NULL, FALSE);
+        return 0;
     }
 
     LRESULT OnLButtonDown(UINT uMsg, WPARAM wParam, LPARAM lParam, BOOL& bHandled)
@@ -396,6 +390,8 @@ public:
         MESSAGE_HANDLER(WM_MOUSEMOVE, OnMouseMove)
         MESSAGE_HANDLER(WM_MOUSELEAVE, OnMouseLeave)
         MESSAGE_HANDLER(BM_SETSTATE, OnSetState)
+        MESSAGE_HANDLER(WM_SETFOCUS, OnFocusChange)
+        MESSAGE_HANDLER(WM_KILLFOCUS, OnFocusChange)
         MESSAGE_HANDLER(WM_LBUTTONDOWN, OnLButtonDown)
     END_MSG_MAP()
 };
@@ -2286,15 +2282,11 @@ ChangePos:
             return S_OK;
         }
 
-        DWORD dwExStyle = WS_EX_TOOLWINDOW | WS_EX_WINDOWEDGE;
+        DWORD dwExStyle = WS_EX_TOOLWINDOW;
         if (g_TaskbarSettings.sr.AlwaysOnTop)
             dwExStyle |= WS_EX_TOPMOST;
 
         DWORD dwStyle = WS_POPUP | WS_VISIBLE | WS_CLIPSIBLINGS | WS_CLIPCHILDREN;
-        if(!m_Theme)
-        {
-            dwStyle |= WS_THICKFRAME | WS_BORDER;
-        }
 
         ZeroMemory(&rcWnd, sizeof(rcWnd));
         if (m_Position != (DWORD) -1)
@@ -2622,14 +2614,7 @@ ChangePos:
 
         m_Theme = OpenThemeData(m_hWnd, L"TaskBar");
 
-        if (m_Theme)
-        {
-            SetWindowStyle(m_hWnd, WS_THICKFRAME | WS_BORDER, 0);
-        }
-        else
-        {
-            SetWindowStyle(m_hWnd, WS_THICKFRAME | WS_BORDER, WS_THICKFRAME | WS_BORDER);
-        }
+        SetWindowStyle(m_hWnd, WS_THICKFRAME | WS_BORDER, 0);
         SetWindowPos(NULL, 0, 0, 0, 0, SWP_FRAMECHANGED | SWP_NOACTIVATE | SWP_NOMOVE | SWP_NOSIZE | SWP_NOZORDER | SWP_NOOWNERZORDER);
 
         return TRUE;
@@ -2677,8 +2662,12 @@ ChangePos:
 
         if (!m_Theme)
         {
-            bHandled = FALSE;
-            return 0;
+            RECT rcClient;
+            GetClientRect(&rcClient);
+            HBRUSH hBrush = CreateSolidBrush(RGB(25, 28, 30));
+            FillRect(hdc, &rcClient, hBrush);
+            DeleteObject(hBrush);
+            return 1;
         }
 
         return EraseBackgroundWithTheme(hdc);

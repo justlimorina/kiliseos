@@ -1319,15 +1319,17 @@ CSysPagerWnd::~CSysPagerWnd() {}
 LRESULT CSysPagerWnd::OnEraseBackground(UINT uMsg, WPARAM wParam, LPARAM lParam, BOOL& bHandled)
 {
     HDC hdc = (HDC) wParam;
+    RECT rect;
+    GetClientRect(&rect);
 
     if (!IsAppThemed())
     {
-        bHandled = FALSE;
-        return 0;
+        HBRUSH hBrush = CreateSolidBrush(RGB(25, 28, 30));
+        FillRect(hdc, &rect, hBrush);
+        DeleteObject(hBrush);
+        return TRUE;
     }
 
-    RECT rect;
-    GetClientRect(&rect);
     DrawThemeParentBackground(m_hWnd, hdc, &rect);
 
     return TRUE;

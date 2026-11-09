@@ -360,14 +360,9 @@ VOID CTrayShowDesktopButton::OnDraw(HDC hdc, LPRECT prc)
     }
     else
     {
-        hbrBackground = ::GetSysColorBrush(COLOR_3DFACE);
-        ::FillRect(hdc, lpRc, hbrBackground);
-
-        if (m_bPressed || m_bHovering)
-        {
-            UINT edge = m_bPressed ? BDR_SUNKENOUTER : BDR_RAISEDINNER;
-            DrawEdge(hdc, lpRc, edge, BF_RECT);
-        }
+        HBRUSH hBrush = CreateSolidBrush((m_bPressed || m_bHovering) ? RGB(45, 50, 56) : RGB(25, 28, 30));
+        ::FillRect(hdc, lpRc, hBrush);
+        DeleteObject(hBrush);
     }
 
     if (m_highContrastMode || !m_drawWithDedicatedBackground)

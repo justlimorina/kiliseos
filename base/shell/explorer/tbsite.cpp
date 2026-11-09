@@ -689,6 +689,8 @@ public:
             return hRet;
 
         SetWindowStyle(m_Rebar, RBS_BANDBORDERS, 0);
+        ::SendMessageW(m_Rebar, RB_SETBKCOLOR, 0, RGB(25, 28, 30));
+        ::SendMessageW(m_Rebar, RB_SETTEXTCOLOR, 0, RGB(227, 226, 230));
 
         /* Set the Desk Bar mode to the current one */
         DWORD dwMode = 0;

@@ -91,7 +91,7 @@ public:
         }
         else
         {
-            SetWindowExStyle(m_hWnd, WS_EX_STATICEDGE, WS_EX_STATICEDGE);
+            SetWindowExStyle(m_hWnd, WS_EX_STATICEDGE, 0);
 
             ContentMargin.cxLeftWidth = 2;
             ContentMargin.cxRightWidth = 2;
@@ -369,15 +369,17 @@ public:
     LRESULT OnEraseBackground(UINT uMsg, WPARAM wParam, LPARAM lParam, BOOL& bHandled)
     {
         HDC hdc = (HDC) wParam;
+        RECT rect;
+        GetClientRect(&rect);
 
         if (!TrayTheme)
         {
-            bHandled = FALSE;
-            return 0;
+            HBRUSH hBrush = CreateSolidBrush(RGB(25, 28, 30));
+            FillRect(hdc, &rect, hBrush);
+            DeleteObject(hBrush);
+            return TRUE;
         }
 
-        RECT rect;
-        GetClientRect(&rect);
         if (IsThemeBackgroundPartiallyTransparent(TrayTheme, TNP_BACKGROUND, 0))
             DrawThemeParentBackground(m_hWnd, hdc, &rect);
 
@@ -519,7 +521,7 @@ public:
     HRESULT Initialize(IN HWND hwndParent)
     {
         const DWORD dwStyle = WS_CHILD | WS_VISIBLE | WS_CLIPSIBLINGS | WS_CLIPCHILDREN;
-        Create(hwndParent, 0, NULL, dwStyle, WS_EX_STATICEDGE);
+        Create(hwndParent, 0, NULL, dwStyle, 0);
         return m_hWnd ? S_OK : E_FAIL;
     }
 
