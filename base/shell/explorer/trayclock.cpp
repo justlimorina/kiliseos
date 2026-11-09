@@ -161,6 +161,7 @@ public:
 
 #define TRAY_CLOCK_WND_SPACING_X    10
 #define TRAY_CLOCK_WND_SPACING_Y    0
+#define TRAY_STATUS_ICON_WIDTH      18
 
 CTrayClockWnd::CTrayClockWnd() :
         hFont(NULL),
@@ -315,7 +316,7 @@ WORD CTrayClockWnd::GetMinimumSize(IN BOOL Horizontal, IN OUT PSIZE pSize)
         }
     }
 
-    szMax.cx += 2 * TRAY_CLOCK_WND_SPACING_X;
+    szMax.cx += 2 * TRAY_CLOCK_WND_SPACING_X + TRAY_STATUS_ICON_WIDTH;
     szMax.cy += 2 * TRAY_CLOCK_WND_SPACING_Y;
 
     *pSize = szMax;
@@ -547,8 +548,28 @@ LRESULT CTrayClockWnd::OnPaint(UINT uMsg, WPARAM wParam, LPARAM lParam, BOOL& bH
 
         RoundRect(hDC, rcPill.left, rcPill.top, rcPill.right, rcPill.bottom, 12, 12);
 
+        /* Draw minimalist vector speaker glyph on left of ChromeOS Status Pill */
+        HPEN hIconPen = CreatePen(PS_SOLID, 1, RGB(138, 180, 248));
+        SelectObject(hDC, hIconPen);
+        INT sx = rcPill.left + 8;
+        INT sy = (rcPill.top + rcPill.bottom) / 2;
+        /* Speaker body & cone */
+        MoveToEx(hDC, sx, sy - 2, NULL);
+        LineTo(hDC, sx + 2, sy - 2);
+        LineTo(hDC, sx + 5, sy - 5);
+        LineTo(hDC, sx + 5, sy + 5);
+        LineTo(hDC, sx + 2, sy + 2);
+        LineTo(hDC, sx, sy + 2);
+        LineTo(hDC, sx, sy - 2);
+        /* Sound wave lines */
+        MoveToEx(hDC, sx + 8, sy - 2, NULL);
+        LineTo(hDC, sx + 8, sy + 3);
+        MoveToEx(hDC, sx + 10, sy - 4, NULL);
+        LineTo(hDC, sx + 10, sy + 5);
+
         SelectObject(hDC, hOldBrush);
         SelectObject(hDC, hOldPen);
+        DeleteObject(hIconPen);
         DeleteObject(hPillBrush);
         DeleteObject(hPillPen);
 
@@ -594,7 +615,7 @@ VOID CTrayClockWnd::PaintLine(IN HDC hDC, IN OUT RECT *rcClient, IN UINT LineNum
     if (LineSizes[LineNumber].cx == 0)
         return;
 
-    INT x = (rcClient->right + rcClient->left - LineSizes[szLinesIndex].cx) / 2;
+    INT x = (rcClient->right + (rcClient->left + TRAY_STATUS_ICON_WIDTH) - LineSizes[szLinesIndex].cx) / 2;
 
     TextOut(hDC,
             x,

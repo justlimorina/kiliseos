@@ -26,9 +26,11 @@ class CQuickSettingsWnd :
     HWND m_hwndBtnShutdown;
     HWND m_hwndBtnDate;
     DWORD m_CurrentVolPercent;
+    DWORD m_dwHideTick;
     HFONT m_hFontBold;
     HFONT m_hFontNormal;
     HFONT m_hFontSmall;
+    HBRUSH m_hBgBrush;
 
 public:
     DECLARE_WND_CLASS_EX(L"kiliseOS_QuickSettingsWnd", CS_HREDRAW | CS_VREDRAW, COLOR_WINDOW)
@@ -42,9 +44,11 @@ public:
         m_hwndBtnShutdown(NULL),
         m_hwndBtnDate(NULL),
         m_CurrentVolPercent(75),
+        m_dwHideTick(0),
         m_hFontBold(NULL),
         m_hFontNormal(NULL),
-        m_hFontSmall(NULL)
+        m_hFontSmall(NULL),
+        m_hBgBrush(NULL)
     {
     }
 
@@ -53,20 +57,25 @@ public:
         if (m_hFontBold) DeleteObject(m_hFontBold);
         if (m_hFontNormal) DeleteObject(m_hFontNormal);
         if (m_hFontSmall) DeleteObject(m_hFontSmall);
+        if (m_hBgBrush) DeleteObject(m_hBgBrush);
     }
 
     BEGIN_MSG_MAP(CQuickSettingsWnd)
         MESSAGE_HANDLER(WM_CREATE, OnCreate)
         MESSAGE_HANDLER(WM_PAINT, OnPaint)
         MESSAGE_HANDLER(WM_ERASEBKGND, OnEraseBkgnd)
+        MESSAGE_HANDLER(WM_DRAWITEM, OnDrawItem)
+        MESSAGE_HANDLER(WM_CTLCOLORSTATIC, OnCtlColorStatic)
         MESSAGE_HANDLER(WM_HSCROLL, OnHScroll)
         MESSAGE_HANDLER(WM_COMMAND, OnCommand)
         MESSAGE_HANDLER(WM_ACTIVATE, OnActivate)
-        MESSAGE_HANDLER(WM_KILLFOCUS, OnKillFocus)
     END_MSG_MAP()
 
     LRESULT OnCreate(UINT uMsg, WPARAM wParam, LPARAM lParam, BOOL& bHandled)
     {
+        SetWindowRgn(CreateRoundRectRgn(0, 0, 301, 246, 12, 12), TRUE);
+        m_hBgBrush = CreateSolidBrush(RGB(25, 28, 30));
+
         NONCLIENTMETRICSW ncm;
         ncm.cbSize = sizeof(ncm);
         SystemParametersInfoW(SPI_GETNONCLIENTMETRICS, sizeof(ncm), &ncm, 0);
@@ -84,7 +93,7 @@ public:
 
         /* Volume Slider */
         m_hwndVolTrack = CreateWindowExW(0, TRACKBAR_CLASSW, L"",
-                                         WS_CHILD | WS_VISIBLE | TBS_NOTICKS | TBS_ENABLESELRANGE,
+                                         WS_CHILD | WS_VISIBLE | TBS_NOTICKS | TBS_BOTH,
                                          50, 68, 185, 24,
                                          m_hWnd, (HMENU)IDC_QS_TRACKBAR_VOL,
                                          GetModuleHandleW(NULL), NULL);
@@ -94,54 +103,98 @@ public:
             SendMessageW(m_hwndVolTrack, TBM_SETPOS, TRUE, m_CurrentVolPercent);
         }
 
-        /* 2x2 Quick Toggle Buttons */
+        /* 2x2 Quick Toggle Buttons (MD3 Owner-Drawn Pills) */
         INT btnW = 135;
         INT btnH = 28;
+        DWORD dwBtnStyle = WS_CHILD | WS_VISIBLE | BS_OWNERDRAW;
 
         m_hwndBtnNetwork = CreateWindowExW(0, L"BUTTON", L"Network",
-                                           WS_CHILD | WS_VISIBLE | BS_PUSHBUTTON,
-                                           12, 105, btnW, btnH,
+                                           dwBtnStyle, 12, 105, btnW, btnH,
                                            m_hWnd, (HMENU)IDC_QS_BTN_NETWORK,
                                            GetModuleHandleW(NULL), NULL);
-        SendMessageW(m_hwndBtnNetwork, WM_SETFONT, (WPARAM)m_hFontNormal, TRUE);
 
         m_hwndBtnSettings = CreateWindowExW(0, L"BUTTON", L"Settings",
-                                            WS_CHILD | WS_VISIBLE | BS_PUSHBUTTON,
-                                            153, 105, btnW, btnH,
+                                            dwBtnStyle, 153, 105, btnW, btnH,
                                             m_hWnd, (HMENU)IDC_QS_BTN_SETTINGS,
                                             GetModuleHandleW(NULL), NULL);
-        SendMessageW(m_hwndBtnSettings, WM_SETFONT, (WPARAM)m_hFontNormal, TRUE);
 
         m_hwndBtnTheme = CreateWindowExW(0, L"BUTTON", L"Display / Themes",
-                                         WS_CHILD | WS_VISIBLE | BS_PUSHBUTTON,
-                                         12, 140, btnW, btnH,
+                                         dwBtnStyle, 12, 140, btnW, btnH,
                                          m_hWnd, (HMENU)IDC_QS_BTN_THEME,
                                          GetModuleHandleW(NULL), NULL);
-        SendMessageW(m_hwndBtnTheme, WM_SETFONT, (WPARAM)m_hFontNormal, TRUE);
 
         m_hwndBtnLock = CreateWindowExW(0, L"BUTTON", L"Lock Screen",
-                                        WS_CHILD | WS_VISIBLE | BS_PUSHBUTTON,
-                                        153, 140, btnW, btnH,
+                                        dwBtnStyle, 153, 140, btnW, btnH,
                                         m_hWnd, (HMENU)IDC_QS_BTN_LOCK,
                                         GetModuleHandleW(NULL), NULL);
-        SendMessageW(m_hwndBtnLock, WM_SETFONT, (WPARAM)m_hFontNormal, TRUE);
 
         /* Date & Time button */
         m_hwndBtnDate = CreateWindowExW(0, L"BUTTON", L"Date & Time Settings",
-                                        WS_CHILD | WS_VISIBLE | BS_PUSHBUTTON,
-                                        12, 178, 175, 26,
+                                        dwBtnStyle, 12, 178, 175, 26,
                                         m_hWnd, (HMENU)IDC_QS_BTN_DATE,
                                         GetModuleHandleW(NULL), NULL);
-        SendMessageW(m_hwndBtnDate, WM_SETFONT, (WPARAM)m_hFontSmall, TRUE);
 
         /* Shut Down button */
         m_hwndBtnShutdown = CreateWindowExW(0, L"BUTTON", L"Shut Down",
-                                            WS_CHILD | WS_VISIBLE | BS_DEFPUSHBUTTON,
-                                            195, 178, 93, 26,
+                                            dwBtnStyle, 195, 178, 93, 26,
                                             m_hWnd, (HMENU)IDC_QS_BTN_SHUTDOWN,
                                             GetModuleHandleW(NULL), NULL);
-        SendMessageW(m_hwndBtnShutdown, WM_SETFONT, (WPARAM)m_hFontNormal, TRUE);
 
+        return TRUE;
+    }
+
+    LRESULT OnCtlColorStatic(UINT uMsg, WPARAM wParam, LPARAM lParam, BOOL& bHandled)
+    {
+        HDC hdc = (HDC)wParam;
+        SetBkColor(hdc, RGB(25, 28, 30));
+        SetTextColor(hdc, RGB(240, 244, 248));
+        return (LRESULT)m_hBgBrush;
+    }
+
+    LRESULT OnDrawItem(UINT uMsg, WPARAM wParam, LPARAM lParam, BOOL& bHandled)
+    {
+        LPDRAWITEMSTRUCT lpdis = (LPDRAWITEMSTRUCT)lParam;
+        if (!lpdis || lpdis->CtlType != ODT_BUTTON)
+            return FALSE;
+
+        HDC hdc = lpdis->hDC;
+        RECT rc = lpdis->rcItem;
+        BOOL bPressed = (lpdis->itemState & ODS_SELECTED) != 0;
+        BOOL bIsShutdown = (lpdis->CtlID == IDC_QS_BTN_SHUTDOWN);
+
+        /* Clear button corner background with card color */
+        FillRect(hdc, &rc, m_hBgBrush);
+
+        COLORREF clrFill = bIsShutdown
+            ? (bPressed ? RGB(102, 157, 246) : RGB(138, 180, 248))
+            : (bPressed ? RGB(45, 50, 56) : RGB(33, 36, 40));
+        COLORREF clrBorder = bIsShutdown
+            ? RGB(138, 180, 248)
+            : RGB(58, 64, 72);
+
+        HBRUSH hBrush = CreateSolidBrush(clrFill);
+        HPEN hPen = CreatePen(PS_SOLID, 1, clrBorder);
+        HBRUSH hOldBrush = (HBRUSH)SelectObject(hdc, hBrush);
+        HPEN hOldPen = (HPEN)SelectObject(hdc, hPen);
+
+        RoundRect(hdc, rc.left, rc.top, rc.right, rc.bottom, 10, 10);
+
+        SelectObject(hdc, hOldBrush);
+        SelectObject(hdc, hOldPen);
+        DeleteObject(hBrush);
+        DeleteObject(hPen);
+
+        WCHAR szText[64] = { 0 };
+        ::GetWindowTextW(lpdis->hwndItem, szText, _countof(szText));
+
+        SetBkMode(hdc, TRANSPARENT);
+        SetTextColor(hdc, bIsShutdown ? RGB(19, 21, 24) : RGB(240, 244, 248));
+        HFONT hFontUse = bIsShutdown ? m_hFontBold : (lpdis->CtlID == IDC_QS_BTN_DATE ? m_hFontSmall : m_hFontNormal);
+        HFONT hOldFont = (HFONT)SelectObject(hdc, hFontUse);
+
+        DrawTextW(hdc, szText, -1, &rc, DT_CENTER | DT_VCENTER | DT_SINGLELINE);
+
+        SelectObject(hdc, hOldFont);
         return TRUE;
     }
 
@@ -187,13 +240,22 @@ public:
         Ellipse(memDC, rcAvatar.left, rcAvatar.top, rcAvatar.right, rcAvatar.bottom);
         DeleteObject(avatarBrush);
 
+        WCHAR szUser[64] = L"User";
+        DWORD cchUser = _countof(szUser);
+        if (!GetUserNameW(szUser, &cchUser) || szUser[0] == L'\0')
+            wcscpy(szUser, L"User");
+
         HFONT oldFont = (HFONT)SelectObject(memDC, m_hFontBold);
+        SetTextColor(memDC, RGB(19, 21, 24));
+        WCHAR szInitial[2] = { (WCHAR)towupper(szUser[0]), L'\0' };
+        DrawTextW(memDC, szInitial, 1, &rcAvatar, DT_CENTER | DT_VCENTER | DT_SINGLELINE);
+
         SetTextColor(memDC, RGB(240, 244, 248));
-        TextOutW(memDC, 46, 15, L"Administrator", 13);
+        TextOutW(memDC, 46, 12, szUser, lstrlenW(szUser));
 
         SelectObject(memDC, m_hFontSmall);
         SetTextColor(memDC, RGB(154, 160, 166)); // #9AA0A6
-        TextOutW(memDC, 46, 30, L"kiliseOS Quick Settings", 23);
+        TextOutW(memDC, 46, 27, L"kiliseOS Quick Settings", 23);
 
         /* Divider lines */
         HPEN divPen = CreatePen(PS_SOLID, 1, RGB(45, 50, 56));
@@ -298,14 +360,9 @@ public:
     {
         if (LOWORD(wParam) == WA_INACTIVE)
         {
+            m_dwHideTick = GetTickCount();
             ShowWindow(SW_HIDE);
         }
-        return 0;
-    }
-
-    LRESULT OnKillFocus(UINT uMsg, WPARAM wParam, LPARAM lParam, BOOL& bHandled)
-    {
-        ShowWindow(SW_HIDE);
         return 0;
     }
 
@@ -314,15 +371,19 @@ public:
         if (m_hWnd == NULL)
         {
             RECT rc = { 0, 0, 300, 245 };
-            Create(NULL, rc, L"kiliseOS Quick Settings", WS_POPUP | WS_BORDER, WS_EX_TOOLWINDOW | WS_EX_TOPMOST);
+            Create(NULL, rc, L"kiliseOS Quick Settings", WS_POPUP, WS_EX_TOOLWINDOW | WS_EX_TOPMOST);
         }
 
         if (IsWindowVisible())
         {
+            m_dwHideTick = GetTickCount();
             ShowWindow(SW_HIDE);
         }
         else
         {
+            if (GetTickCount() - m_dwHideTick < 250)
+                return;
+
             RECT rcAnchor;
             ::GetWindowRect(hwndAnchor, &rcAnchor);
 

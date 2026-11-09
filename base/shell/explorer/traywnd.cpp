@@ -185,11 +185,13 @@ class CStartButton
     HIMAGELIST m_ImageList;
     SIZE       m_Size;
     HFONT      m_Font;
+    BOOL       m_bHover;
 
 public:
     CStartButton()
         : m_ImageList(NULL),
-          m_Font(NULL)
+          m_Font(NULL),
+          m_bHover(FALSE)
     {
         m_Size.cx = 0;
         m_Size.cy = 0;
@@ -211,17 +213,7 @@ public:
 
     VOID UpdateSize()
     {
-        SIZE Size = { 0, 0 };
-
-        if (m_ImageList == NULL ||
-            !SendMessageW(BCM_GETIDEALSIZE, 0, (LPARAM) &Size))
-        {
-            Size.cx = 2 * GetSystemMetrics(SM_CXEDGE) + GetSystemMetrics(SM_CYCAPTION) * 3;
-        }
-
-        Size.cy = max(Size.cy, GetSystemMetrics(SM_CYCAPTION));
-
-        /* Save the size of the start button */
+        SIZE Size = { 38, GetSystemMetrics(SM_CYCAPTION) };
         m_Size = Size;
     }
 
@@ -292,6 +284,102 @@ public:
         return m_hWnd;
     }
 
+    LRESULT OnEraseBkgnd(UINT uMsg, WPARAM wParam, LPARAM lParam, BOOL& bHandled)
+    {
+        return 1;
+    }
+
+    LRESULT OnPaint(UINT uMsg, WPARAM wParam, LPARAM lParam, BOOL& bHandled)
+    {
+        PAINTSTRUCT ps;
+        HDC hdc = (wParam != 0) ? (HDC)wParam : BeginPaint(&ps);
+        if (!hdc)
+            return 0;
+
+        RECT rcClient;
+        GetClientRect(&rcClient);
+
+        if (IsAppThemed())
+            DrawThemeParentBackground(m_hWnd, hdc, &rcClient);
+        else
+            FillRect(hdc, &rcClient, GetSysColorBrush(COLOR_3DFACE));
+
+        BOOL bPushed = (DefWindowProcW(BM_GETSTATE, 0, 0) & BST_PUSHED) != 0;
+
+        RECT rcPill = rcClient;
+        InflateRect(&rcPill, -2, -1);
+
+        COLORREF clrBg = (bPushed || m_bHover) ? RGB(45, 50, 56) : RGB(25, 28, 30);
+        COLORREF clrBorder = bPushed ? RGB(138, 180, 248) : (m_bHover ? RGB(74, 82, 92) : RGB(45, 50, 56));
+
+        HBRUSH hBrush = CreateSolidBrush(clrBg);
+        HPEN hBorderPen = CreatePen(PS_SOLID, 1, clrBorder);
+        HBRUSH hOldBrush = (HBRUSH)SelectObject(hdc, hBrush);
+        HPEN hOldPen = (HPEN)SelectObject(hdc, hBorderPen);
+
+        RoundRect(hdc, rcPill.left, rcPill.top, rcPill.right, rcPill.bottom, 12, 12);
+
+        /* Draw Minimalist Geometric Globus Cruciger (Option 1) in Cyan #8AB4F8 */
+        HPEN hEmblemPen = CreatePen(PS_SOLID, 1, RGB(138, 180, 248));
+        SelectObject(hdc, hEmblemPen);
+        SelectObject(hdc, GetStockObject(NULL_BRUSH));
+
+        INT cx = (rcPill.left + rcPill.right) / 2;
+        INT cy = (rcPill.top + rcPill.bottom) / 2;
+        INT orbY = cy + 2;
+        INT r = 5;
+
+        /* Main Orb */
+        Ellipse(hdc, cx - r, orbY - r, cx + r + 1, orbY + r + 1);
+        /* Horizontal Equator */
+        MoveToEx(hdc, cx - r, orbY, NULL);
+        LineTo(hdc, cx + r + 1, orbY);
+        /* Continuous Vertical Axis (from bottom of orb to top cross spire) */
+        MoveToEx(hdc, cx, orbY + r, NULL);
+        LineTo(hdc, cx, orbY - r - 6);
+        /* Symmetrical Crossbar */
+        MoveToEx(hdc, cx - 3, orbY - r - 3, NULL);
+        LineTo(hdc, cx + 4, orbY - r - 3);
+
+        SelectObject(hdc, hOldBrush);
+        SelectObject(hdc, hOldPen);
+        DeleteObject(hEmblemPen);
+        DeleteObject(hBrush);
+        DeleteObject(hBorderPen);
+
+        if (wParam == 0)
+            EndPaint(&ps);
+        return 0;
+    }
+
+    LRESULT OnMouseMove(UINT uMsg, WPARAM wParam, LPARAM lParam, BOOL& bHandled)
+    {
+        if (!m_bHover)
+        {
+            m_bHover = TRUE;
+            TRACKMOUSEEVENT tme = { sizeof(tme), TME_LEAVE, m_hWnd, 0 };
+            TrackMouseEvent(&tme);
+            InvalidateRect(NULL, FALSE);
+        }
+        bHandled = FALSE;
+        return 0;
+    }
+
+    LRESULT OnMouseLeave(UINT uMsg, WPARAM wParam, LPARAM lParam, BOOL& bHandled)
+    {
+        m_bHover = FALSE;
+        InvalidateRect(NULL, FALSE);
+        bHandled = FALSE;
+        return 0;
+    }
+
+    LRESULT OnSetState(UINT uMsg, WPARAM wParam, LPARAM lParam, BOOL& bHandled)
+    {
+        LRESULT lRes = DefWindowProcW(uMsg, wParam, lParam);
+        InvalidateRect(NULL, FALSE);
+        return lRes;
+    }
+
     LRESULT OnLButtonDown(UINT uMsg, WPARAM wParam, LPARAM lParam, BOOL& bHandled)
     {
         if (uMsg == WM_KEYUP && wParam != VK_SPACE)
@@ -302,6 +390,12 @@ public:
     }
 
     BEGIN_MSG_MAP(CStartButton)
+        MESSAGE_HANDLER(WM_ERASEBKGND, OnEraseBkgnd)
+        MESSAGE_HANDLER(WM_PAINT, OnPaint)
+        MESSAGE_HANDLER(WM_PRINTCLIENT, OnPaint)
+        MESSAGE_HANDLER(WM_MOUSEMOVE, OnMouseMove)
+        MESSAGE_HANDLER(WM_MOUSELEAVE, OnMouseLeave)
+        MESSAGE_HANDLER(BM_SETSTATE, OnSetState)
         MESSAGE_HANDLER(WM_LBUTTONDOWN, OnLButtonDown)
     END_MSG_MAP()
 };

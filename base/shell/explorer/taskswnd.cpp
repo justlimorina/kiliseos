@@ -627,10 +627,8 @@ public:
         ASSERT(TaskItem->Index >= 0);
 
         tbbi.cbSize = sizeof(tbbi);
-        tbbi.dwMask = TBIF_BYINDEX | TBIF_STATE | TBIF_IMAGE;
-        if (!g_TaskbarSettings.bTaskbarIconOnly)
-            tbbi.dwMask |= TBIF_TEXT;
-
+        tbbi.dwMask = TBIF_BYINDEX | TBIF_STATE | TBIF_TEXT | TBIF_IMAGE | TBIF_STYLE;
+        tbbi.fsStyle = BTNS_CHECK | BTNS_NOPREFIX | (g_TaskbarSettings.bTaskbarIconOnly ? 0 : BTNS_SHOWTEXT);
         tbbi.fsState = TBSTATE_ENABLED;
         if (m_ActiveTaskItem == TaskItem)
             tbbi.fsState |= TBSTATE_CHECKED;
@@ -646,14 +644,10 @@ public:
             tbbi.fsState |= TBSTATE_WRAP;
         }
 
-        if (!g_TaskbarSettings.bTaskbarIconOnly && GetWndTextFromTaskItem(TaskItem, windowText, _countof(windowText)) > 0)
-        {
-            tbbi.pszText = windowText;
-        }
-        else
-        {
-            tbbi.pszText = NULL;
-        }
+        windowText[0] = L'\0';
+        if (!g_TaskbarSettings.bTaskbarIconOnly)
+            GetWndTextFromTaskItem(TaskItem, windowText, _countof(windowText));
+        tbbi.pszText = windowText;
 
         icon = GetWndIcon(TaskItem->hWnd);
         if (!icon)
@@ -807,7 +801,7 @@ public:
 
         tbBtn.iBitmap = TaskItem->IconIndex;
         tbBtn.fsState = TBSTATE_ENABLED | TBSTATE_ELLIPSES;
-        tbBtn.fsStyle = BTNS_CHECK | BTNS_NOPREFIX | BTNS_SHOWTEXT;
+        tbBtn.fsStyle = BTNS_CHECK | BTNS_NOPREFIX | (g_TaskbarSettings.bTaskbarIconOnly ? 0 : BTNS_SHOWTEXT);
         tbBtn.dwData = TaskItem->Index;
 
         if (!g_TaskbarSettings.bTaskbarIconOnly && GetWndTextFromTaskItem(TaskItem, windowText, _countof(windowText)) > 0)
